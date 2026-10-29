@@ -1,0 +1,2036 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Dashboard รายงานผลการดำเนินงานกลุ่มงานเภสัชกรรม</title>
+  <!-- Google Fonts: Sarabun -->
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg-page: #f1f5f9;
+      --text-main: #0f172a;
+      --border-color: #cbd5e1;
+      --header-tab-blue: #1e40af;
+
+      /* สีประจำแต่ละกิจกรรมหลัก 5 ด้าน */
+      --cat1-main: #1d4ed8;
+      --cat1-sub: #dbeafe;
+      --cat1-sub-hover: #bfdbfe;
+      --cat1-text: #1e3a8a;
+
+      --cat2-main: #0f766e;
+      --cat2-sub: #ccfbf1;
+      --cat2-sub-hover: #99f6e4;
+      --cat2-text: #134e4a;
+
+      --cat3-main: #6d28d9;
+      --cat3-sub: #ede9fe;
+      --cat3-sub-hover: #ddd6fe;
+      --cat3-text: #4c1d95;
+
+      --cat4-main: #c2410c;
+      --cat4-sub: #ffedd5;
+      --cat4-sub-hover: #fed7aa;
+      --cat4-text: #7c2d12;
+
+      --cat5-main: #be185d;
+      --cat5-sub: #fce7f3;
+      --cat5-sub-hover: #fbcfe8;
+      --cat5-text: #831843;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      overflow-x: hidden;
+      width: 100%;
+    }
+
+    /* แถบด้านบน และส่วนดึงข้อมูลมุมขวาบน */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 8px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .menu-toggle-btn {
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .app-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ส่วนดึงข้อมูลมุมขวาบน */
+    .data-source-panel {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-left: auto;
+      background: rgba(255,255,255,0.1);
+      padding: 5px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .status-badge {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #1e293b;
+      color: #38bdf8;
+      font-weight: 600;
+    }
+
+    .btn-action {
+      background: #10b981;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-action.sync-btn {
+      background: #3b82f6;
+    }
+
+    .btn-action.layout-btn {
+      background: #64748b;
+    }
+
+    .btn-action:hover {
+      opacity: 0.92;
+    }
+
+    #csvFileInput {
+      display: none;
+    }
+
+    /* โครงสร้างหลัก ซ้าย (แท็บกิจกรรม) + ขวา (พื้นที่แสดงผล) */
+    .dashboard-wrapper {
+      display: flex;
+      align-items: flex-start;
+      width: 100%;
+      min-height: calc(100vh - 54px);
+    }
+
+    /* แท็บด้านซ้าย */
+    .sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: #ffffff;
+      border-right: 1px solid var(--border-color);
+      height: calc(100vh - 54px);
+      position: sticky;
+      top: 54px;
+      overflow-y: auto;
+      padding: 8px 6px 24px 6px;
+      transition: all 0.25s ease;
+      z-index: 900;
+    }
+
+    .sidebar.collapsed {
+      margin-left: -280px;
+    }
+
+    /* ขนาดตัวอักษรและสีของแท็บด้านซ้ายตามคำสั่ง */
+    .nav-cat-group {
+      margin-bottom: 10px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+
+    /* ตัวหนังสือตัวใหญ่พิเศษ (หัวข้อกิจกรรมหลัก) */
+    .nav-xl {
+      width: 100%;
+      text-align: left;
+      padding: 11px 10px;
+      font-family: inherit;
+      font-size: 1.12rem;
+      font-weight: 800;
+      color: #ffffff;
+      border: none;
+      cursor: pointer;
+      line-height: 1.3;
+      display: block;
+    }
+
+    /* ตัวหนังสือตัวใหญ่ (แท็บย่อยหลัก) */
+    .nav-lg {
+      width: 100%;
+      text-align: left;
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 0.96rem;
+      font-weight: 700;
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.6);
+      cursor: pointer;
+      line-height: 1.3;
+      display: block;
+    }
+
+    /* แท็บย่อยระดับลงมา */
+    .nav-md {
+      width: 100%;
+      text-align: left;
+      padding: 6px 10px 6px 18px;
+      font-family: inherit;
+      font-size: 0.84rem;
+      font-weight: 600;
+      border: none;
+      border-top: 1px dashed rgba(0,0,0,0.08);
+      cursor: pointer;
+      line-height: 1.3;
+      display: block;
+    }
+
+    .nav-label-only {
+      cursor: default;
+      opacity: 0.95;
+    }
+
+    /* สีของแต่ละกลุ่มกิจกรรม */
+    .cat-1 .nav-xl { background: var(--cat1-main); }
+    .cat-1 .nav-lg, .cat-1 .nav-md { background: var(--cat1-sub); color: var(--cat1-text); }
+    .cat-1 .nav-item.active { background: #1e40af; color: #ffffff; box-shadow: inset 4px 0 0 #93c5fd; }
+
+    .cat-2 .nav-xl { background: var(--cat2-main); }
+    .cat-2 .nav-lg, .cat-2 .nav-md { background: var(--cat2-sub); color: var(--cat2-text); }
+    .cat-2 .nav-item.active { background: #115e59; color: #ffffff; box-shadow: inset 4px 0 0 #5eead4; }
+
+    .cat-3 .nav-xl { background: var(--cat3-main); }
+    .cat-3 .nav-lg, .cat-3 .nav-md { background: var(--cat3-sub); color: var(--cat3-text); }
+    .cat-3 .nav-item.active { background: #5b21b6; color: #ffffff; box-shadow: inset 4px 0 0 #c4b5fd; }
+
+    .cat-4 .nav-xl { background: var(--cat4-main); }
+    .cat-4 .nav-item.active { background: #9a3412; color: #ffffff; box-shadow: inset 4px 0 0 #fdba74; }
+
+    .cat-5 .nav-xl { background: var(--cat5-main); }
+    .cat-5 .nav-lg, .cat-5 .nav-md { background: var(--cat5-sub); color: var(--cat5-text); }
+    .cat-5 .nav-item.active { background: #9d174d; color: #ffffff; box-shadow: inset 4px 0 0 #f9a8d4; }
+
+    /* พื้นที่แสดงผลหลัก */
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      padding: 10px;
+      width: 100%;
+    }
+
+    /* กริดจัดวางทีละสองแถวต่อหน้ากระดาษ (ซ้ายครึ่งหน้า - ขวาครึ่งหน้า) */
+    .page-grid-2col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      width: 100%;
+    }
+
+    .page-grid-1col {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 12px;
+      width: 100%;
+    }
+
+    /* การ์ดแสดงผลแต่ละตัวชี้วัด */
+    .metric-card {
+      background: #ffffff;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* แท็บชื่อข้อมูลจากคอลัมน์ B เหนือกราฟ พื้นหลังสีน้ำเงิน/ตามสีแท็บ ตัวหนังสือสีขาว */
+    .metric-title-tab {
+      background: var(--header-tab-blue);
+      color: #ffffff;
+      padding: 7px 10px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    /* แท็บบรรจุข้อมูล 3 แท็บ (ผลงานปี 68 / ยอดรวมปี 69 / ผลของการเปรียบเทียบ) อยู่ข้างบนกราฟ */
+    .summary-tabs-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      padding: 8px 8px 4px 8px;
+      background: #f8fafc;
+    }
+
+    .summary-tab-box {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-top: 3px solid #1d4ed8;
+      border-radius: 6px;
+      padding: 5px 6px;
+      text-align: center;
+    }
+
+    .summary-tab-box.tab-69 {
+      border-top-color: #0d9488;
+    }
+
+    .summary-tab-box.tab-diff {
+      border-top-color: #7c3aed;
+    }
+
+    .summary-tab-label {
+      font-size: 0.7rem;
+      color: #475569;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .summary-tab-value {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #0f172a;
+      word-break: break-word;
+    }
+
+    /* การจัดวางสัดส่วน 3/4 และ 1/4 ของหน้ากระดาษ */
+    .split-3-4-and-1-4 {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      width: 100%;
+      padding: 6px;
+      gap: 6px;
+      background: #ffffff;
+    }
+
+    .pane-3-4 {
+      width: 75%;
+      flex: 0 0 75%;
+      min-width: 0;
+      background: #ffffff;
+      position: relative;
+      height: 195px;
+    }
+
+    .pane-1-4 {
+      width: 25%;
+      flex: 0 0 25%;
+      min-width: 0;
+      background: #ffffff;
+      position: relative;
+      height: 195px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .pane-full {
+      width: 100%;
+      padding: 6px;
+      background: #ffffff;
+      position: relative;
+      height: 205px;
+    }
+
+    /* แท็บสี่เหลี่ยม 1/4 แสดงข้อมูลรวมปี 69 */
+    .rect-box-1-4 {
+      width: 100%;
+      height: 100%;
+      min-height: 130px;
+      border: 2px solid #1e40af;
+      border-radius: 8px;
+      background: #eff6ff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      text-align: center;
+    }
+
+    .rect-box-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #1e3a8a;
+      margin-bottom: 4px;
+    }
+
+    .rect-box-val {
+      font-size: 0.98rem;
+      font-weight: 800;
+      color: #0f172a;
+      word-break: break-word;
+    }
+
+    /* ครึ่งหน้าซ้าย - ครึ่งหน้าขวา (สำหรับ 5.2.4 มูลค่ายาคงคลัง) */
+    .split-half-half {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      width: 100%;
+      padding: 10px;
+      gap: 10px;
+      background: #ffffff;
+    }
+
+    .pane-half {
+      width: 50%;
+      flex: 0 0 50%;
+      min-width: 0;
+      position: relative;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .under-chart-caption {
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #1e3a8a;
+      padding: 4px 0 8px 0;
+    }
+
+    /* ตาราง 5.2.1 (ข้อ 6, 7, 9) */
+    .custom-table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      background: #ffffff;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      padding: 8px;
+    }
+
+    table.procurement-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    table.procurement-table th,
+    table.procurement-table td {
+      border: 1px solid #cbd5e1;
+      padding: 8px 6px;
+      text-align: center; /* จัดเรียงให้อยู่ตรงกลางคอลัมน์ทุกคอลัมน์ */
+      vertical-align: middle;
+    }
+
+    table.procurement-table th {
+      background: #1e40af;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    table.procurement-table tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    /* ปรับแต่งสำหรับหน้าจอมือถือแนวตั้ง (Portrait) โดยไม่ต้องหมุนจอ */
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 52px;
+        height: calc(100vh - 52px);
+        width: 245px;
+        min-width: 245px;
+        box-shadow: 4px 0 16px rgba(0,0,0,0.25);
+      }
+      .sidebar.collapsed {
+        transform: translateX(-100%);
+        margin-left: 0;
+      }
+
+      /* ย่อขนาดฟอนต์และการ์ดให้แสดง 2 คอลัมน์ซ้าย-ขวา และสัดส่วน 3/4 + 1/4 ได้ในแนวตั้งโดยไม่ล้นจอ */
+      .page-grid-2col {
+        gap: 6px;
+      }
+      .metric-title-tab {
+        font-size: 0.72rem;
+        padding: 5px 6px;
+      }
+      .pane-3-4 {
+        height: 155px;
+      }
+      .pane-1-4 {
+        height: 155px;
+      }
+      .rect-box-label {
+        font-size: 0.62rem;
+      }
+      .rect-box-val {
+        font-size: 0.78rem;
+      }
+      .summary-tab-label {
+        font-size: 0.62rem;
+      }
+      .summary-tab-value {
+        font-size: 0.75rem;
+      }
+
+      /* หากผู้ใช้กดสลับโหมดขยายเต็มจอมือถือ */
+      body.mobile-stack-mode .page-grid-2col {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      body.mobile-stack-mode .pane-3-4,
+      body.mobile-stack-mode .pane-1-4 {
+        height: 185px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- แถบด้านบน และส่วนดึงข้อมูลมุมขวาบน -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="menu-toggle-btn" id="toggleSidebarBtn" onclick="toggleSidebar()">☰ แท็บกิจกรรม</button>
+      <div class="app-title">Dashboard รายงานผลงานเภสัชกรรม</div>
+    </div>
+
+    <!-- ส่วนดึงข้อมูลมุมขวาบนและปุ่มเลือกไฟล์นำเข้า CSV (UTF-8) -->
+    <div class="data-source-panel">
+      <span class="status-badge" id="dataStatusBadge">กำลังดึงข้อมูลแผ่นงาน...</span>
+      <button class="btn-action sync-btn" onclick="loadFromGoogleSheet()">🔄 ดึงข้อมูล Sheet</button>
+      <button class="btn-action" onclick="document.getElementById('csvFileInput').click()">📂 นำเข้าไฟล์ CSV (UTF-8)</button>
+      <button class="btn-action layout-btn" onclick="toggleMobileStack()" id="layoutToggleBtn">📱 สลับขนาดคอลัมน์</button>
+      <input type="file" id="csvFileInput" accept=".csv,text/csv" onchange="handleCSVUpload(event)" />
+    </div>
+  </header>
+
+  <div class="dashboard-wrapper">
+    <!-- แท็บด้านซ้าย มีกิจกรรมให้เลือก โดยแต่ละกิจกรรมมีสีต่างกัน -->
+    <aside class="sidebar" id="sidebarNav">
+
+      <!-- 1. งานบริการเภสัชกรรมผู้ป่วยนอก -->
+      <div class="nav-cat-group cat-1">
+        <button class="nav-xl" onclick="selectView('1.1')">งานบริการเภสัชกรรมผู้ป่วยนอก</button>
+        <button class="nav-lg nav-item active" data-view="1.1" onclick="selectView('1.1')">1.1 ข้อมูลบริการทั่วไป</button>
+        <button class="nav-lg nav-item" data-view="1.2.1" onclick="selectView('1.2.1')">1.2.1 medication error</button>
+        <button class="nav-lg nav-item" data-view="1.2.6" onclick="selectView('1.2.6')">1.2.6 ระยะเวลาในการรอรับบริการผู้ป่วยนอก</button>
+        <button class="nav-lg nav-item" data-view="2.1" onclick="selectView('2.1')">2.1 งานให้คำปรึกษาด้านการใช้ยา (ราย)</button>
+        <button class="nav-lg nav-item" data-view="2.2" onclick="selectView('2.2')">2.2 การให้บริการคลินิกพิเศษ</button>
+      </div>
+
+      <!-- 2. งานบริการเภสัชกรรมผู้ป่วยใน -->
+      <div class="nav-cat-group cat-2">
+        <button class="nav-xl" onclick="selectView('3.1')">งานบริการเภสัชกรรมผู้ป่วยใน</button>
+        <button class="nav-lg nav-item" data-view="3.1" onclick="selectView('3.1')">3.1 ข้อมูลงานบริการทั่วไป</button>
+        <div class="nav-lg nav-label-only">3.2 ข้อมูลผลการดำเนินงานและอุบัติการณ์สำคัญ</div>
+        <div class="nav-lg nav-label-only">3.2.1ข้อมูลความคลาดเคลื่อนทางยา</div>
+        <button class="nav-md nav-item" data-view="3.2.1_1" onclick="selectView('3.2.1_1')">1) Medication error</button>
+        <button class="nav-md nav-item" data-view="3.2.1_2" onclick="selectView('3.2.1_2')">2) ความคลาดเคลื่อนระบบยาผู้ป่วยในแยกตามระดับความรุนแรง</button>
+        <button class="nav-md nav-item" data-view="3.2.4" onclick="selectView('3.2.4')">3.2.4 High alert drug</button>
+        <button class="nav-lg nav-item" data-view="3.2.6" onclick="selectView('3.2.6')">3.2.6 จ่ายยาทั่วไปที่เป็นคำสั่งใหม่ ภายใน 120 นาที หลังจากที่ได้รับใบเบิกหรือคำสั่งใช้ยา</button>
+        <button class="nav-lg nav-item" data-view="3.2.7.1" onclick="selectView('3.2.7.1')">3.2.7.1 เวลาให้ยา stat ผู้ป่วยใน</button>
+        <button class="nav-lg nav-item" data-view="3.2.7.2" onclick="selectView('3.2.7.2')">3.2.7.2 เวลาให้ยา stat ห้องฉุกเฉิน</button>
+        <button class="nav-lg nav-item" data-view="3.2.9" onclick="selectView('3.2.9')">3.2.9 ADR ซ้ำ</button>
+        <button class="nav-lg nav-item" data-view="4" onclick="selectView('4')">4.งานบริบาลเภสัชกรรมผู้ป่วยใน</button>
+      </div>
+
+      <!-- 3. งานบริหารเวชภัณฑ์ -->
+      <div class="nav-cat-group cat-3">
+        <button class="nav-xl" onclick="selectView('5.1_sub')">งานบริหารเวชภัณฑ์</button>
+        <div class="nav-lg nav-label-only">5.1 ข้อมูลพื้นฐาน</div>
+        <button class="nav-md nav-item" data-view="5.1_sub" onclick="selectView('5.1_sub')">บัญชีรายการและเวชภัณฑ์มิใช่ยาของโรงพยาบาล</button>
+        <div class="nav-lg nav-label-only">5.2 ข้อมูลการปฏิบัติงานและตัวชี้วัดสำคัญ</div>
+        <div class="nav-md nav-label-only" style="font-weight:700;">5.2.1 การจัดซื้อ/จัดหาเวชภัณฑ์</div>
+        <button class="nav-md nav-item" data-view="5.2.1_1" onclick="selectView('5.2.1_1')">1) มูลค่าจัดซื้อยา บาท/รับเข้าคลัง</button>
+        <button class="nav-md nav-item" data-view="5.2.1_2" onclick="selectView('5.2.1_2')">2) มูลค่าจัดซื้อเทียบกับแผน/ED:NED</button>
+        <button class="nav-md nav-item" data-view="5.2.1_3" onclick="selectView('5.2.1_3')">3) มูลค่ายาส่งตั้งเจ้าหนี้การค้า (บาท)</button>
+        <button class="nav-md nav-item" data-view="5.2.1_4" onclick="selectView('5.2.1_4')">4) มูลค่ายารับการสนับสนุน/ตั้งข้อมูลรายได้ (บาท)</button>
+        <button class="nav-md nav-item" data-view="5.2.1_679" onclick="selectView('5.2.1_679')">
+          6) การจัดซื้อยาจากองค์การเภสัชกรรม<br/>
+          -มูลค่าจัดซื้อยาจากองค์การเภสัชกรรมเทียบกับแผนจัดซื้อยา<br/>
+          7) การจัดซื้อยานวัตกรรม<br/>
+          -มูลค่าจัดซื้อยานวัตกรรมรวมเทียบกับแผนจัดซื้อยา<br/>
+          9) มูลค่าประหยัดในการจัดซื้อยา<br/>
+          - e-bidding<br/>
+          - สืบราคา
+        </button>
+        <button class="nav-md nav-item" data-view="5.2.2" onclick="selectView('5.2.2')">5.2.2 การตรวจรับเวชภัณฑ์</button>
+        <button class="nav-md nav-item" data-view="5.2.3" onclick="selectView('5.2.3')">5.2.3 การเบิกจ่ายเวชภัณฑ์ในโรงพยาบาล</button>
+        <button class="nav-md nav-item" data-view="5.2.4" onclick="selectView('5.2.4')">5.2.4 มูลค่ายาคงคลัง</button>
+        <button class="nav-md nav-item" data-view="5.2.4_days" onclick="selectView('5.2.4_days')">อัตราสำรองยาคงคลัง (วัน)</button>
+        <button class="nav-md nav-item" data-view="5.2.6" onclick="selectView('5.2.6')">5.2.6 มูลค่าเบิกยา referback</button>
+        <button class="nav-md nav-item" data-view="5.2.7" onclick="selectView('5.2.7')">5.2.7 งานสนับสนุนสถานบริการระดับรอง (รพ.สต)</button>
+        <button class="nav-md nav-item" data-view="5.2.8" onclick="selectView('5.2.8')">5.2.8 มูลค่าสนับสนุนยาให้หน่วยงานราชการ/หน่วยงานอื่นๆ</button>
+        <button class="nav-md nav-item" data-view="5.2.9" onclick="selectView('5.2.9')">5.2.9 งานบริการจ่ายยาเสพติด</button>
+      </div>
+
+      <!-- 4. งานเภสัชกรรมการผลิต -->
+      <div class="nav-cat-group cat-4">
+        <button class="nav-xl nav-item" data-view="6_prod" onclick="selectView('6_prod')">งานเภสัชกรรมการผลิต</button>
+      </div>
+
+      <!-- 5. งานเภสัชกรรมปฐมภูมิ -->
+      <div class="nav-cat-group cat-5">
+        <button class="nav-xl" onclick="selectView('7.1')">งานเภสัชกรรมปฐมภูมิ</button>
+        <button class="nav-lg nav-item" data-view="7.1" onclick="selectView('7.1')">7.1 Visit</button>
+        <button class="nav-lg nav-item" data-view="7.2" onclick="selectView('7.2')">7.2 จำนวนรายการสั่งจ่ายยา+มูลค่า (ยานอกบัญชี รพสต.)</button>
+        <button class="nav-lg nav-item" data-view="7.3" onclick="selectView('7.3')">7.3 ข้อมูล Medication error/ความเสี่ยง</button>
+        <button class="nav-lg nav-item" data-view="7.4" onclick="selectView('7.4')">7.4 งานคุ้มครองผู้บริโภคด้านสาธารณสุข</button>
+        <button class="nav-lg nav-item" data-view="7.5" onclick="selectView('7.5')">7.5 ปริมาณงาน หน่วย รพสต.</button>
+        <button class="nav-lg nav-item" data-view="7.6" onclick="selectView('7.6')">7.6 กิจกรรมเยี่ยมผู้ป่วย</button>
+        <button class="nav-lg nav-item" data-view="7.7" onclick="selectView('7.7')">7.7 งานกัญชาทางการแพทย์</button>
+        <button class="nav-lg nav-item" data-view="7.8" onclick="selectView('7.8')">7.8 งานบริการเภสัชกรรมทางไกล</button>
+        <button class="nav-lg nav-item" data-view="7.9" onclick="selectView('7.9')">7.9 RDU PCU (ร้อยละ รพสต.ที่ผ่านเกณฑ์)</button>
+        <button class="nav-lg nav-item" data-view="7.10" onclick="selectView('7.10')">7.10 การเผยแพร่ความรู้</button>
+        <button class="nav-lg nav-item" data-view="7.11" onclick="selectView('7.11')">7.11 งานให้คำปรึกษาด้านการใช้ยา</button>
+        <div class="nav-lg nav-label-only">9.ข้อมูลระบบงานคุณภาพและตัวชี้วัดสำคัญ</div>
+        <button class="nav-md nav-item" data-view="9_1" onclick="selectView('9_1')">1) RDU 12 ข้อ (ต้องผ่านเกณฑ์ 10 ข้อ)</button>
+        <button class="nav-md nav-item" data-view="9_2" onclick="selectView('9_2')">2) ADR แพ้ยาซ้ำ (ครั้ง)</button>
+        <button class="nav-md nav-item" data-view="9_4" onclick="selectView('9_4')">4) HAD</button>
+        <div class="nav-md nav-label-only" style="font-weight:700;">5) DUE</div>
+        <button class="nav-md nav-item" data-view="9_5_1" onclick="selectView('9_5_1')">ร้อยละการปฏิบัติตามแนวทางการสั่งใช้ยาต้านจุลชีพ</button>
+        <button class="nav-md nav-item" data-view="9_5_2" onclick="selectView('9_5_2')">อัตราความเหมาะสมตามเกณฑ์ในการใช้ยาต้านจุลชีพ</button>
+        <button class="nav-md nav-item" data-view="9_5_3" onclick="selectView('9_5_3')">ร้อยละการสั่งยาตรงตามเงื่อนไข</button>
+        <button class="nav-md nav-item" data-view="9_9" onclick="selectView('9_9')">9) Medication reconciliation</button>
+        <button class="nav-md nav-item" data-view="9_10" onclick="selectView('9_10')">10) ความพึงพอใจของผู้มารับบริการ</button>
+      </div>
+
+    </aside>
+
+    <!-- พื้นที่แสดงผลกราฟและตาราง -->
+    <main class="main-content" id="dashboardContent"></main>
+  </div>
+
+  <script>
+    /*************************************************************************
+     * 1. ค่าคงที่และการเชื่อมต่อข้อมูล Google Sheets / CSV (UTF-8)
+     *************************************************************************/
+    const SHEET_ID = '1gwU6iaFemgML-xRE1lW9EeQtRl9VXY5UBYegqARU4Kc';
+    const SHEET_GID = '1581621566';
+    const MONTHS_TH = ['ต.ค.', 'พ.ย.', 'ธ.ค.', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.'];
+
+    // เก็บข้อมูลแต่ละแถวตามลำดับแถวจริงใน Sheet (1-based: sheetRows[10] คือ แถวที่ 10)
+    let sheetRows = [];
+    let currentViewId = '1.1';
+    let activeCharts = [];
+
+    // แปลงข้อความเป็นตัวเลขจริง (รองรับทศนิยม เครื่องหมายคอมม่า และสัญลักษณ์เป้าหมาย เช่น <=, >=, <, >)
+    function parseNum(raw) {
+      if (raw === null || raw === undefined) return null;
+      if (typeof raw === 'number') return isNaN(raw) ? null : raw;
+      const str = String(raw).replace(/,/g, '').trim();
+      if (!str || str === '-' || str === '#DIV/0!' || str === '#VALUE!' || str === 'N/A') return null;
+      const match = str.match(/-?\d+(\.\d+)?/);
+      return match ? parseFloat(match[0]) : null;
+    }
+
+    // แสดงผลตัวเลขจริงรวมทศนิยม
+    function formatNum(val) {
+      if (val === null || val === undefined || isNaN(val)) return '0';
+      const num = Number(val);
+      if (Number.isInteger(num)) return num.toLocaleString('th-TH');
+      return num.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+
+    // ดึงแถวที่ต้องการแบบ 1-based index (แถวที่ 1 = sheetRows[1])
+    function getRowData(rowNum) {
+      const r = sheetRows[rowNum] || [];
+      // คอลัมน์ B = index 1 (ชื่อข้อมูลที่แสดง)
+      const nameB = (r[1] !== undefined && String(r[1]).trim() !== '')
+        ? String(r[1]).trim()
+        : (r[0] !== undefined && String(r[0]).trim() !== '' ? String(r[0]).trim() : 'ข้อมูลรายการ');
+      // คอลัมน์ D = index 3 (ข้อมูลปีงบ 68)
+      const fy68 = parseNum(r[3]);
+      // คอลัมน์ E = index 4 (ข้อมูลเป้าหมาย)
+      const target = parseNum(r[4]);
+      const targetRaw = r[4] !== undefined ? String(r[4]).trim() : '';
+      // คอลัมน์ F ถึง Q = index 5 ถึง 16 (รายเดือน ต.ค. - ก.ย.69)
+      const months = [];
+      for (let c = 5; c <= 16; c++) {
+        months.push(parseNum(r[c]));
+      }
+      // คอลัมน์ Q = index 16 (ก.ย.69)
+      const sep69 = parseNum(r[16]);
+      // คอลัมน์ R = index 17 (ข้อมูลรวมปี 69)
+      let total69 = parseNum(r[17]);
+      if (total69 === null) {
+        // กรณีคอลัมน์ R ว่าง ให้รวมจากรายเดือนที่มีค่า
+        const validMonths = months.filter(v => v !== null);
+        total69 = validMonths.length > 0 ? validMonths.reduce((a, b) => a + b, 0) : 0;
+      }
+      return {
+        name: nameB,
+        fy68: fy68 !== null ? fy68 : 0,
+        target: target,
+        targetRaw: targetRaw,
+        months: months.map(v => (v !== null ? v : 0)),
+        sep69: sep69 !== null ? sep69 : (total69 !== null ? total69 : 0),
+        total69: total69 !== null ? total69 : 0
+      };
+    }
+
+    /*************************************************************************
+     * 2. ตัวแปลงไฟล์ CSV (รองรับ Unicode UTF-8 และคงลำดับแถวว่างทุกแถว)
+     *************************************************************************/
+    function parseCSVToRows(csvText) {
+      const cleanText = csvText.replace(/^\uFEFF/, '');
+      const rows = [];
+      let currentRow = [];
+      let currentVal = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < cleanText.length; i++) {
+        const ch = cleanText[i];
+        const nextCh = cleanText[i + 1];
+
+        if (inQuotes) {
+          if (ch === '"' && nextCh === '"') {
+            currentVal += '"';
+            i++;
+          } else if (ch === '"') {
+            inQuotes = false;
+          } else {
+            currentVal += ch;
+          }
+        } else {
+          if (ch === '"') {
+            inQuotes = true;
+          } else if (ch === ',') {
+            currentRow.push(currentVal);
+            currentVal = '';
+          } else if (ch === '\r' && nextCh === '\n') {
+            currentRow.push(currentVal);
+            rows.push(currentRow);
+            currentRow = [];
+            currentVal = '';
+            i++;
+          } else if (ch === '\n' || ch === '\r') {
+            currentRow.push(currentVal);
+            rows.push(currentRow);
+            currentRow = [];
+            currentVal = '';
+          } else {
+            currentVal += ch;
+          }
+        }
+      }
+      if (currentVal.length > 0 || currentRow.length > 0) {
+        currentRow.push(currentVal);
+        rows.push(currentRow);
+      }
+
+      // จัดเก็บแบบ 1-based (sheetRows[1] = แถวที่ 1)
+      const oneBased = [null];
+      for (let i = 0; i < rows.length; i++) {
+        oneBased.push(rows[i]);
+      }
+      return oneBased;
+    }
+
+    // นำเข้าไฟล์ CSV (UTF-8) จากปุ่มมุมขวาบน
+    function handleCSVUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const content = e.target.result;
+        sheetRows = parseCSVToRows(content);
+        document.getElementById('dataStatusBadge').textContent = 'นำเข้า CSV สำเร็จ: ' + file.name;
+        renderCurrentView();
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    // ดึงข้อมูลจาก Google Sheets อัตโนมัติ (CSV Export + JSONP Fallback)
+    async function loadFromGoogleSheet() {
+      const badge = document.getElementById('dataStatusBadge');
+      badge.textContent = 'กำลังดึงข้อมูลจาก Google Sheets...';
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
+
+      try {
+        const res = await fetch(csvUrl);
+        if (res.ok) {
+          const csvText = await res.text();
+          sheetRows = parseCSVToRows(csvText);
+          badge.textContent = 'เชื่อมต่อแผ่นงานปัจจุบันสำเร็จ';
+          renderCurrentView();
+          return;
+        }
+      } catch (err) {
+        // หากติด CORS เมื่อเปิดไฟล์แบบ Local (file://) จะสลับไปใช้ JSONP อัตโนมัติ
+      }
+
+      // Fallback ด้วย Google Visualization JSONP (รองรับการเปิดไฟล์ HTML โดยตรงโดยไม่ติด CORS)
+      window.handleGvizResponse = function(response) {
+        if (!response || !response.table) {
+          badge.textContent = 'กรุณาเลือกไฟล์นำเข้า CSV (UTF-8)';
+          renderCurrentView();
+          return;
+        }
+        const table = response.table;
+        const oneBased = [null];
+        if (table.cols && table.cols.some(c => c.label)) {
+          oneBased.push(table.cols.map(c => c.label || ''));
+        }
+        table.rows.forEach(r => {
+          const rowArr = (r.c || []).map(cell => {
+            if (!cell) return '';
+            return cell.f !== undefined && cell.f !== null ? cell.f : (cell.v !== null && cell.v !== undefined ? cell.v : '');
+          });
+          oneBased.push(rowArr);
+        });
+        sheetRows = oneBased;
+        badge.textContent = 'เชื่อมต่อแผ่นงานปัจจุบันสำเร็จ';
+        renderCurrentView();
+      };
+
+      const oldScript = document.getElementById('gvizScript');
+      if (oldScript) oldScript.remove();
+      const script = document.createElement('script');
+      script.id = 'gvizScript';
+      script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=responseHandler:handleGvizResponse&gid=${SHEET_GID}&headers=0`;
+      script.onerror = function() {
+        badge.textContent = 'พร้อมรับไฟล์ CSV (UTF-8)';
+        renderCurrentView();
+      };
+      document.body.appendChild(script);
+    }
+
+    /*************************************************************************
+     * 3. ปลั๊กอิน Chart.js วาดลูกศรโค้งสีน้ำเงิน (Curved Arrow) ตรงกลาง 2 แท่ง
+     *************************************************************************/
+    const curvedArrowPlugin = {
+      id: 'curvedArrowPlugin',
+      afterDatasetsDraw(chart) {
+        const cfg = chart.options.plugins && chart.options.plugins.curvedArrowConfig;
+        if (!cfg || !cfg.enabled) return;
+
+        const meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data || meta.data.length < 2) return;
+
+        const bar0 = meta.data[0];
+        const bar1 = meta.data[1];
+        const ctx = chart.ctx;
+
+        const v68 = Number(cfg.val68) || 0;
+        const v69 = Number(cfg.val69) || 0;
+        const diff = v69 - v68;
+        const isUp = diff >= 0;
+
+        const midX = (bar0.x + bar1.x) / 2;
+        const topY = Math.min(bar0.y, bar1.y);
+        const chartArea = chart.chartArea;
+        const centerY = Math.max(chartArea.top + 24, Math.min(topY - 6, (chartArea.top + chartArea.bottom) / 2));
+
+        ctx.save();
+
+        // วาดเส้นโค้ง Curved Arrow สีน้ำเงินตรงกลางระหว่างแท่งทั้งสอง
+        const startX = bar0.x + (bar1.x - bar0.x) * 0.22;
+        const endX = bar0.x + (bar1.x - bar0.x) * 0.78;
+        const startY = isUp ? centerY + 10 : centerY - 10;
+        const endY = isUp ? centerY - 10 : centerY + 10;
+        const ctrlX = midX;
+        const ctrlY = isUp ? centerY - 22 : centerY + 22;
+
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
+        ctx.strokeStyle = '#1d4ed8';
+        ctx.lineWidth = 2.2;
+        ctx.stroke();
+
+        // วาดหัวลูกศรเอียงชี้ขึ้นหรือเอียงชี้ลง
+        const angle = Math.atan2(endY - ctrlY, endX - ctrlX);
+        const headLen = 7;
+        ctx.beginPath();
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(endX - headLen * Math.cos(angle - Math.PI / 6), endY - headLen * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(endX - headLen * Math.cos(angle + Math.PI / 6), endY - headLen * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fillStyle = '#1d4ed8';
+        ctx.fill();
+
+        // แสดงตัวเลขผลต่างตรงกลางทั้งสองแท่ง
+        const diffSign = diff > 0 ? '+' : '';
+        const diffText = `${diffSign}${formatNum(diff)}`;
+        ctx.font = 'bold 10px Sarabun, sans-serif';
+        const textWidth = ctx.measureText(diffText).width;
+        const boxW = textWidth + 8;
+        const boxH = 15;
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+        ctx.strokeStyle = '#1d4ed8';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(midX - boxW / 2, centerY - boxH / 2, boxW, boxH, 4);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#1d4ed8';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(diffText, midX, centerY);
+
+        ctx.restore();
+      }
+    };
+
+    // ปลั๊กอินพื้นหลังสีขาวของกราฟ และแสดงเปอร์เซ็นต์บน Pie Chart
+    const whiteBackgroundAndPieLabelsPlugin = {
+      id: 'whiteBackgroundAndPieLabelsPlugin',
+      beforeDraw(chart) {
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, chart.width, chart.height);
+        ctx.restore();
+      },
+      afterDatasetsDraw(chart) {
+        if (chart.config.type !== 'pie') return;
+        const ctx = chart.ctx;
+        const dataset = chart.data.datasets[0];
+        const total = dataset.data.reduce((acc, v) => acc + (Number(v) || 0), 0);
+        if (total <= 0) return;
+
+        const meta = chart.getDatasetMeta(0);
+        ctx.save();
+        ctx.font = 'bold 11px Sarabun, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        meta.data.forEach((arc, idx) => {
+          const val = Number(dataset.data[idx]) || 0;
+          if (val <= 0) return;
+          const pct = ((val / total) * 100).toFixed(1) + '%';
+          const pos = arc.tooltipPosition();
+          ctx.fillText(pct, pos.x, pos.y);
+        });
+        ctx.restore();
+      }
+    };
+
+    Chart.register(curvedArrowPlugin, whiteBackgroundAndPieLabelsPlugin);
+
+    /*************************************************************************
+     * 4. ฟังก์ชันกำหนดสเกลแกน X และ Y ให้เป็นเลขจำนวนเต็มเสมอ (ข้อมูลจริงรวมทศนิยม)
+     *************************************************************************/
+    function buildIntegerScaleOptions(valuesArray) {
+      const nums = (valuesArray || []).filter(v => v !== null && v !== undefined && !isNaN(v)).map(Number);
+      const maxVal = nums.length > 0 ? Math.max(...nums, 0) : 1;
+      const minVal = nums.length > 0 ? Math.min(...nums, 0) : 0;
+      const intMax = Math.max(1, Math.ceil(maxVal * 1.15));
+      const intMin = minVal < 0 ? Math.floor(minVal * 1.1) : 0;
+
+      return {
+        x: {
+          grid: { color: '#f1f5f9' },
+          ticks: {
+            font: { family: 'Sarabun', size: 9 },
+            maxRotation: 45,
+            minRotation: 0,
+            callback: function(val) {
+              const label = this.getLabelForValue ? this.getLabelForValue(val) : val;
+              if (typeof label === 'number') return Math.round(label);
+              return label;
+            }
+          }
+        },
+        y: {
+          beginAtZero: true,
+          min: intMin,
+          suggestedMax: intMax,
+          grid: { color: '#f1f5f9' },
+          ticks: {
+            precision: 0,
+            stepSize: intMax <= 5 ? 1 : undefined,
+            font: { family: 'Sarabun', size: 9 },
+            callback: function(value) {
+              if (Number.isInteger(value)) {
+                return value.toLocaleString('th-TH');
+              }
+              return null;
+            }
+          }
+        }
+      };
+    }
+
+    /*************************************************************************
+     * 5. ฟังก์ชันสร้างกราฟแต่ละรูปแบบตามคำสั่ง
+     *************************************************************************/
+    function createMonthlyLineChart(canvasEl, rowData, showTarget) {
+      const allVals = [...rowData.months];
+      const datasets = [
+        {
+          label: 'ข้อมูลรายเดือน',
+          data: rowData.months,
+          borderColor: '#0d47a1', // เส้นสีน้ำเงินเข้ม
+          backgroundColor: 'rgba(56, 189, 248, 0.28)', // พื้นที่ใต้เส้นสีฟ้าอ่อนๆ
+          fill: true,
+          tension: 0.25,
+          borderWidth: 2,
+          pointRadius: 2.5,
+          pointBackgroundColor: '#0d47a1'
+        }
+      ];
+
+      if (showTarget && rowData.target !== null) {
+        allVals.push(rowData.target);
+        datasets.push({
+          label: 'เป้าหมาย',
+          data: Array(12).fill(rowData.target),
+          borderColor: '#ef4444', // เส้นเป้าหมายเป็นเส้นประสีแดง
+          borderDash: [5, 5],
+          borderWidth: 1.8,
+          pointRadius: 0,
+          fill: false
+        });
+      }
+
+      const chart = new Chart(canvasEl, {
+        type: 'line',
+        data: {
+          labels: MONTHS_TH,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${formatNum(ctx.raw)}`
+              }
+            }
+          },
+          scales: buildIntegerScaleOptions(allVals)
+        }
+      });
+      activeCharts.push(chart);
+    }
+
+    function createCompareBarChart14(canvasEl, rowData, showTarget) {
+      const allVals = [rowData.fy68, rowData.total69];
+      const datasets = [
+        {
+          label: 'เปรียบเทียบ',
+          data: [rowData.fy68, rowData.total69],
+          // กราฟแท่งคนละสีกับกราฟเส้น และแท่งปีงบ 68 คนละสีกับแท่งรวมปี 69
+          backgroundColor: ['#f59e0b', '#10b981'],
+          borderColor: ['#d97706', '#059669'],
+          borderWidth: 1,
+          barPercentage: 0.65
+        }
+      ];
+
+      if (showTarget && rowData.target !== null) {
+        allVals.push(rowData.target);
+        datasets.push({
+          type: 'line',
+          label: 'เป้าหมาย',
+          data: [rowData.target, rowData.target],
+          borderColor: '#ef4444',
+          borderDash: [4, 4],
+          borderWidth: 1.8,
+          pointRadius: 0,
+          fill: false
+        });
+      }
+
+      const chart = new Chart(canvasEl, {
+        type: 'bar',
+        data: {
+          labels: ['ปีงบ 68', 'รวมปี 69'],
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            curvedArrowConfig: {
+              enabled: true,
+              val68: rowData.fy68,
+              val69: rowData.total69
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.label}: ${formatNum(ctx.raw)}`
+              }
+            }
+          },
+          scales: buildIntegerScaleOptions(allVals)
+        }
+      });
+      activeCharts.push(chart);
+    }
+
+    function createRDUMonthlyBarChart(canvasEl, rowData) {
+      const labels = [...MONTHS_TH, 'รวมปี 69'];
+      const dataVals = [...rowData.months, rowData.total69];
+      const allVals = [...dataVals];
+      // แท่งข้อมูลรวมปี 69 เป็นคนละสีกับแท่งรายเดือน และคนละสีกับกราฟเส้น
+      const bgColors = [...Array(12).fill('#14b8a6'), '#f59e0b'];
+
+      const datasets = [
+        {
+          label: 'ผลงาน',
+          data: dataVals,
+          backgroundColor: bgColors,
+          borderRadius: 3
+        }
+      ];
+
+      if (rowData.target !== null) {
+        allVals.push(rowData.target);
+        datasets.push({
+          type: 'line',
+          label: 'เป้าหมาย',
+          data: Array(13).fill(rowData.target),
+          borderColor: '#ef4444',
+          borderDash: [5, 5],
+          borderWidth: 1.8,
+          pointRadius: 0,
+          fill: false
+        });
+      }
+
+      const chart = new Chart(canvasEl, {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${formatNum(ctx.raw)}`
+              }
+            }
+          },
+          scales: buildIntegerScaleOptions(allVals)
+        }
+      });
+      activeCharts.push(chart);
+    }
+
+    function createMonthlyBarWithTargetChart(canvasEl, rowData) {
+      const allVals = [...rowData.months];
+      const datasets = [
+        {
+          label: 'ผลงานรายเดือน',
+          data: rowData.months,
+          backgroundColor: '#10b981',
+          borderRadius: 3
+        }
+      ];
+
+      if (rowData.target !== null) {
+        allVals.push(rowData.target);
+        datasets.push({
+          type: 'line',
+          label: 'เป้าหมาย',
+          data: Array(12).fill(rowData.target),
+          borderColor: '#ef4444',
+          borderDash: [5, 5],
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false
+        });
+      }
+
+      const chart = new Chart(canvasEl, {
+        type: 'bar',
+        data: {
+          labels: MONTHS_TH,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${formatNum(ctx.raw)}`
+              }
+            }
+          },
+          scales: buildIntegerScaleOptions(allVals)
+        }
+      });
+      activeCharts.push(chart);
+    }
+
+    /*************************************************************************
+     * 6. ฟังก์ชันสร้าง Card Component สำหรับแต่ละรูปแบบ
+     *************************************************************************/
+    // รูปแบบ A: แท็บ 3 ช่องด้านบน (ผลงานปี 68 / ยอดรวมปี 69 / ผลของการเปรียบเทียบ) + กราฟเส้นรายเดือนด้านล่าง
+    function buildCardTopTabsAndLine(rowNum, customLabels = null) {
+      const d = getRowData(rowNum);
+      const diff = d.total69 - d.fy68;
+      const diffSign = diff > 0 ? '+' : '';
+      const lbl68 = customLabels && customLabels.lbl68 ? customLabels.lbl68 : 'ผลงานปี 68';
+      const lbl69 = customLabels && customLabels.lbl69 ? customLabels.lbl69 : 'ยอดรวมปี 69';
+      const lblDiff = customLabels && customLabels.lblDiff ? customLabels.lblDiff : 'ผลของการเปรียบเทียบ';
+
+      const card = document.createElement('div');
+      card.className = 'metric-card';
+      card.innerHTML = `
+        <div class="metric-title-tab">${d.name}</div>
+        <div class="summary-tabs-row">
+          <div class="summary-tab-box">
+            <div class="summary-tab-label">${lbl68}</div>
+            <div class="summary-tab-value">${formatNum(d.fy68)}</div>
+          </div>
+          <div class="summary-tab-box tab-69">
+            <div class="summary-tab-label">${lbl69}</div>
+            <div class="summary-tab-value">${formatNum(d.total69)}</div>
+          </div>
+          <div class="summary-tab-box tab-diff">
+            <div class="summary-tab-label">${lblDiff}</div>
+            <div class="summary-tab-value" style="color:${diff >= 0 ? '#1d4ed8' : '#dc2626'}">
+              ${diff >= 0 ? '▲' : '▼'} ${diffSign}${formatNum(diff)}
+            </div>
+          </div>
+        </div>
+        <div class="pane-full">
+          <canvas></canvas>
+        </div>
+      `;
+      setTimeout(() => {
+        const canvas = card.querySelector('canvas');
+        createMonthlyLineChart(canvas, d, false);
+      }, 0);
+      return card;
+    }
+
+    // รูปแบบ B: สัดส่วน 3/4 กราฟเส้นแนวโน้มรายเดือน + สัดส่วน 1/4 กราฟแท่งเปรียบเทียบ (พร้อม Curved Arrow)
+    function buildCardLine34AndBar14(rowNum, showTargetInLine, showTargetInBar) {
+      const d = getRowData(rowNum);
+      const card = document.createElement('div');
+      card.className = 'metric-card';
+      card.innerHTML = `
+        <div class="metric-title-tab">${d.name}</div>
+        <div class="split-3-4-and-1-4">
+          <div class="pane-3-4"><canvas class="line-cv"></canvas></div>
+          <div class="pane-1-4"><canvas class="bar-cv"></canvas></div>
+        </div>
+      `;
+      setTimeout(() => {
+        createMonthlyLineChart(card.querySelector('.line-cv'), d, showTargetInLine);
+        createCompareBarChart14(card.querySelector('.bar-cv'), d, showTargetInBar);
+      }, 0);
+      return card;
+    }
+
+    // รูปแบบ C: สัดส่วน 3/4 กราฟเส้นแนวโน้มรายเดือนอย่างเดียว
+    function buildCardLine34Only(rowNum, showTargetInLine) {
+      const d = getRowData(rowNum);
+      const card = document.createElement('div');
+      card.className = 'metric-card';
+      card.innerHTML = `
+        <div class="metric-title-tab">${d.name}</div>
+        <div class="split-3-4-and-1-4">
+          <div class="pane-3-4"><canvas class="line-cv"></canvas></div>
+        </div>
+      `;
+      setTimeout(() => {
+        createMonthlyLineChart(card.querySelector('.line-cv'), d, showTargetInLine);
+      }, 0);
+      return card;
+    }
+
+    // รูปแบบ D: สัดส่วน 3/4 กราฟเส้นแนวโน้มรายเดือน + สัดส่วน 1/4 แท็บสี่เหลี่ยมแสดงข้อมูลรวมปี 69
+    function buildCardLine34AndBox14(rowNum, showTargetInLine) {
+      const d = getRowData(rowNum);
+      const card = document.createElement('div');
+      card.className = 'metric-card';
+      card.innerHTML = `
+        <div class="metric-title-tab">${d.name}</div>
+        <div class="split-3-4-and-1-4">
+          <div class="pane-3-4"><canvas class="line-cv"></canvas></div>
+          <div class="pane-1-4">
+            <div class="rect-box-1-4">
+              <div class="rect-box-label">รวมปี 69</div>
+              <div class="rect-box-val">${formatNum(d.total69)}</div>
+            </div>
+          </div>
+        </div>
+      `;
+      setTimeout(() => {
+        createMonthlyLineChart(card.querySelector('.line-cv'), d, showTargetInLine);
+      }, 0);
+      return card;
+    }
+
+    /*************************************************************************
+     * 7. ฟังก์ชันจัดการการแสดงผลแต่ละเมนูตามเงื่อนไขทุกข้อ
+     *************************************************************************/
+    function destroyActiveCharts() {
+      activeCharts.forEach(c => {
+        try { c.destroy(); } catch (e) {}
+      });
+      activeCharts = [];
+    }
+
+    function selectView(viewId) {
+      currentViewId = viewId;
+      document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-view') === viewId);
+      });
+      if (window.innerWidth <= 768) {
+        document.getElementById('sidebarNav').classList.add('collapsed');
+      }
+      renderCurrentView();
+    }
+
+    function renderCurrentView() {
+      destroyActiveCharts();
+      const container = document.getElementById('dashboardContent');
+      container.innerHTML = '';
+
+      // 1.1 ข้อมูลบริการทั่วไป (แถว 10, 11, 13, 12 ตามลำดับคำสั่ง)
+      if (currentViewId === '1.1') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [10, 11, 13, 12].forEach(r => grid.appendChild(buildCardTopTabsAndLine(r)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 1.2.1 medication error (แถว 17-18, 21-23 เทียบเป้าหมาย และ แถว 26)
+      if (currentViewId === '1.2.1') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [17, 18, 21, 22, 23].forEach(r => grid.appendChild(buildCardLine34AndBar14(r, true, true)));
+        grid.appendChild(buildCardLine34AndBar14(26, false, false));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 1.2.6 ระยะเวลาในการรอรับบริการผู้ป่วยนอก (แถว 42-50 และ แถว 51-52)
+      if (currentViewId === '1.2.6') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        for (let r = 42; r <= 50; r++) {
+          grid.appendChild(buildCardLine34AndBar14(r, true, true));
+        }
+        [51, 52].forEach(r => grid.appendChild(buildCardLine34Only(r, false)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 2.1 งานให้คำปรึกษาด้านการใช้ยา (ราย) (แถว 56-61)
+      if (currentViewId === '2.1') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        for (let r = 56; r <= 61; r++) {
+          grid.appendChild(buildCardLine34AndBar14(r, false, false));
+        }
+        container.appendChild(grid);
+        return;
+      }
+
+      // 2.2 การให้บริการคลินิกพิเศษ (แถว 63,66,69,72,75,78,81,84,87,90,91,92)
+      if (currentViewId === '2.2') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [63, 66, 69, 72, 75, 78, 81, 84, 87, 90, 91, 92].forEach(r => {
+          grid.appendChild(buildCardLine34AndBar14(r, false, false));
+        });
+        container.appendChild(grid);
+        return;
+      }
+
+      // 3.1 ข้อมูลงานบริการทั่วไป (แถว 97-100)
+      if (currentViewId === '3.1') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        for (let r = 97; r <= 100; r++) {
+          grid.appendChild(buildCardTopTabsAndLine(r));
+        }
+        container.appendChild(grid);
+        return;
+      }
+
+      // 3.2.1 -> 1) Medication error (แถว 104-108)
+      if (currentViewId === '3.2.1_1') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        for (let r = 104; r <= 108; r++) {
+          grid.appendChild(buildCardLine34AndBar14(r, true, true));
+        }
+        container.appendChild(grid);
+        return;
+      }
+
+      // 3.2.1 -> 2) ความคลาดเคลื่อนระบบยาผู้ป่วยในแยกตามระดับความรุนแรง (แถว 111-112)
+      if (currentViewId === '3.2.1_2') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [111, 112].forEach(r => grid.appendChild(buildCardLine34AndBar14(r, false, false)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 3.2.4 High alert drug (แถว 122 และ แถว 124-125)
+      if (currentViewId === '3.2.4') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [122, 124, 125].forEach(r => grid.appendChild(buildCardLine34AndBar14(r, true, true)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 3.2.6 จ่ายยาทั่วไปที่เป็นคำสั่งใหม่ ภายใน 120 นาที (แถว 130-132)
+      if (currentViewId === '3.2.6') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [130, 131, 132].forEach(r => grid.appendChild(buildCardLine34AndBar14(r, true, true)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 3.2.7.1 เวลาให้ยา stat ผู้ป่วยใน (แถว 134 และ แถว 135)
+      if (currentViewId === '3.2.7.1') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        grid.appendChild(buildCardLine34AndBar14(134, false, false));
+        grid.appendChild(buildCardLine34AndBar14(135, true, true));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 3.2.7.2 เวลาให้ยา stat ห้องฉุกเฉิน (แถว 137-139)
+      if (currentViewId === '3.2.7.2') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [137, 138, 139].forEach(r => grid.appendChild(buildCardLine34AndBar14(r, true, true)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 3.2.9 ADR ซ้ำ (แถว 140)
+      if (currentViewId === '3.2.9') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-1col';
+        grid.appendChild(buildCardLine34AndBar14(140, true, true));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 4.งานบริบาลเภสัชกรรมผู้ป่วยใน (แถว 142-147)
+      if (currentViewId === '4') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        for (let r = 142; r <= 147; r++) {
+          grid.appendChild(buildCardLine34AndBar14(r, false, false));
+        }
+        container.appendChild(grid);
+        return;
+      }
+
+      // 5.1 บัญชีรายการและเวชภัณฑ์มิใช่ยาของโรงพยาบาล (Pie แถว 151-152 + แท็บสี่เหลี่ยม 1/4 แถว 153)
+      if (currentViewId === '5.1_sub') {
+        const r151 = getRowData(151);
+        const r152 = getRowData(152);
+        const r153 = getRowData(153);
+        const card = document.createElement('div');
+        card.className = 'metric-card';
+        card.innerHTML = `
+          <div class="metric-title-tab">${r151.name} / ${r152.name}</div>
+          <div class="split-3-4-and-1-4">
+            <div class="pane-3-4"><canvas class="pie-cv"></canvas></div>
+            <div class="pane-1-4">
+              <div class="rect-box-1-4">
+                <div class="rect-box-label">${r153.name}</div>
+                <div class="rect-box-val">${formatNum(r153.total69)}</div>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+        setTimeout(() => {
+          const chart = new Chart(card.querySelector('.pie-cv'), {
+            type: 'pie',
+            data: {
+              labels: [r151.name, r152.name],
+              datasets: [{
+                data: [r151.total69 || r151.fy68 || 1, r152.total69 || r152.fy68 || 1],
+                backgroundColor: ['#2563eb', '#10b981']
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom' } }
+            }
+          });
+          activeCharts.push(chart);
+        }, 0);
+        return;
+      }
+
+      // 5.2.1 -> 1) มูลค่าจัดซื้อยา บาท/รับเข้าคลัง (แถว 156)
+      if (currentViewId === '5.2.1_1') {
+        container.appendChild(buildCardLine34AndBox14(156, false));
+        return;
+      }
+
+      // 5.2.1 -> 2) มูลค่าจัดซื้อเทียบกับแผน/ED:NED (แถว 158, 160 และ 163)
+      if (currentViewId === '5.2.1_2') {
+        const r158 = getRowData(158);
+        const r160 = getRowData(160);
+        const r163 = getRowData(163);
+        const diff163 = r163.total69 - r163.fy68;
+        const diffSign = diff163 > 0 ? '+' : '';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'page-grid-1col';
+
+        // 1. แท็บเปรียบเทียบแถว 163 ในบรรทัดเดียวกัน
+        const tabCard = document.createElement('div');
+        tabCard.className = 'metric-card';
+        tabCard.innerHTML = `
+          <div class="metric-title-tab">${r163.name}</div>
+          <div class="summary-tabs-row">
+            <div class="summary-tab-box">
+              <div class="summary-tab-label">มูลค่าการจัดซื้อรวมปี 68</div>
+              <div class="summary-tab-value">${formatNum(r163.fy68)}</div>
+            </div>
+            <div class="summary-tab-box tab-69">
+              <div class="summary-tab-label">มูลค่าการจัดซื้อรวมปี 69</div>
+              <div class="summary-tab-value">${formatNum(r163.total69)}</div>
+            </div>
+            <div class="summary-tab-box tab-diff">
+              <div class="summary-tab-label">ผลของการเปรียบเทียบ</div>
+              <div class="summary-tab-value" style="color:${diff163 >= 0 ? '#1d4ed8' : '#dc2626'}">
+                ${diff163 >= 0 ? '▲' : '▼'} ${diffSign}${formatNum(diff163)}
+              </div>
+            </div>
+          </div>
+        `;
+        wrapper.appendChild(tabCard);
+
+        // 2. Pie Graph แถว 158 และ 160 พร้อมข้อความใต้กราฟ "ข้อมูลการจัดซื้อรวม ปี 69"
+        const pieCard = document.createElement('div');
+        pieCard.className = 'metric-card';
+        pieCard.innerHTML = `
+          <div class="metric-title-tab">${r158.name} / ${r160.name}</div>
+          <div class="pane-full"><canvas class="pie-ed-ned"></canvas></div>
+          <div class="under-chart-caption">ข้อมูลการจัดซื้อรวม ปี 69</div>
+        `;
+        wrapper.appendChild(pieCard);
+
+        // 3. Bar Chart เป้าหมาย(แผนจัดซื้อ) คอลัมน์ E เทียบยอดรวมปี 69 จากแถว 158 และ 160
+        const barCard = document.createElement('div');
+        barCard.className = 'metric-card';
+        barCard.innerHTML = `
+          <div class="metric-title-tab">มูลค่าซื้อยาในบัญชียาหลักแห่งชาติ(ED)/มูลค่าซื้อยานอกบัญชียาหลักแห่งชาติ(ED)เทียบกับแผนจัดซื้อ</div>
+          <div class="pane-full"><canvas class="bar-ed-ned"></canvas></div>
+        `;
+        wrapper.appendChild(barCard);
+        container.appendChild(wrapper);
+
+        setTimeout(() => {
+          const pieChart = new Chart(pieCard.querySelector('.pie-ed-ned'), {
+            type: 'pie',
+            data: {
+              labels: [r158.name, r160.name],
+              datasets: [{
+                data: [r158.total69 || 1, r160.total69 || 1],
+                backgroundColor: ['#2563eb', '#f59e0b']
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom' } }
+            }
+          });
+          activeCharts.push(pieChart);
+
+          const planVals = [r158.target || 0, r160.target || 0];
+          const actVals = [r158.total69 || 0, r160.total69 || 0];
+          const barChart = new Chart(barCard.querySelector('.bar-ed-ned'), {
+            type: 'bar',
+            data: {
+              labels: [r158.name, r160.name],
+              datasets: [
+                {
+                  label: 'แผนจัดซื้อ',
+                  data: planVals,
+                  backgroundColor: '#f59e0b'
+                },
+                {
+                  label: 'ข้อมูลรวมปี 69',
+                  data: actVals,
+                  backgroundColor: '#10b981'
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'top' } },
+              scales: buildIntegerScaleOptions([...planVals, ...actVals])
+            }
+          });
+          activeCharts.push(barChart);
+        }, 0);
+        return;
+      }
+
+      // 5.2.1 -> 3) มูลค่ายาส่งตั้งเจ้าหนี้การค้า (บาท) (แถว 166)
+      if (currentViewId === '5.2.1_3') {
+        container.appendChild(buildCardLine34AndBox14(166, false));
+        return;
+      }
+
+      // 5.2.1 -> 4) มูลค่ายารับการสนับสนุน/ตั้งข้อมูลรายได้ (บาท) (แถว 167)
+      if (currentViewId === '5.2.1_4') {
+        container.appendChild(buildCardLine34AndBox14(167, false));
+        return;
+      }
+
+      // 5.2.1 -> 6), 7), 9) ตารางเปรียบเทียบแผนจัดซื้อและมูลค่าประหยัด (แถว 171 vs 172, 176 vs 177, 185, 186)
+      if (currentViewId === '5.2.1_679') {
+        const r171 = getRowData(171);
+        const r172 = getRowData(172);
+        const r176 = getRowData(176);
+        const r177 = getRowData(177);
+        const r185 = getRowData(185);
+        const r186 = getRowData(186);
+
+        // ตรวจสอบแถวที่เป็นแผนจัดซื้อ vs มูลค่าการจัดซื้อ
+        const is171Plan = r171.name.includes('แผน');
+        const gpoBuy = is171Plan ? r172.total69 : r171.total69;
+        const gpoPlan = is171Plan ? r171.total69 : r172.total69;
+        const gpoPct = gpoPlan > 0 ? ((gpoBuy / gpoPlan) * 100).toFixed(2) + '%' : '-';
+
+        const is176Plan = r176.name.includes('แผน');
+        const innoBuy = is176Plan ? r177.total69 : r176.total69;
+        const innoPlan = is176Plan ? r176.total69 : r177.total69;
+        const innoPct = innoPlan > 0 ? ((innoBuy / innoPlan) * 100).toFixed(2) + '%' : '-';
+
+        const tblWrap = document.createElement('div');
+        tblWrap.className = 'custom-table-wrapper';
+        tblWrap.innerHTML = `
+          <table class="procurement-table">
+            <thead>
+              <tr>
+                <th>รายการ</th>
+                <th>มูลค่าการจัดซื้อ/ประหยัด</th>
+                <th>แผนจัดซื้อ</th>
+                <th>คิดเป็น(%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>มูลค่าจัดซื้อยาจากองค์การเภสัชกรรม เทียบแผนจัดซื้อ</td>
+                <td>${formatNum(gpoBuy)}</td>
+                <td>${formatNum(gpoPlan)}</td>
+                <td>${gpoPct}</td>
+              </tr>
+              <tr>
+                <td>มูลค่าจัดซื้อยานวัตกรรมรวม เทียบแผนจัดซื้อ</td>
+                <td>${formatNum(innoBuy)}</td>
+                <td>${formatNum(innoPlan)}</td>
+                <td>${innoPct}</td>
+              </tr>
+              <tr>
+                <td>มูลค่าประหยัดในการจัดซื้อยาโดยวิธี e-bidding</td>
+                <td>${formatNum(r185.total69)}</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+              <tr>
+                <td>มูลค่าประหยัดในการจัดซื้อยาโดยวิธีสืบราคา</td>
+                <td>${formatNum(r186.total69)}</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+            </tbody>
+          </table>
+        `;
+        container.appendChild(tblWrap);
+        return;
+      }
+
+      // 5.2.2 การตรวจรับเวชภัณฑ์ (แถว 190-193)
+      if (currentViewId === '5.2.2') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        for (let r = 190; r <= 193; r++) {
+          grid.appendChild(buildCardLine34AndBox14(r, false));
+        }
+        container.appendChild(grid);
+        return;
+      }
+
+      // 5.2.3 การเบิกจ่ายเวชภัณฑ์ในโรงพยาบาล (แถว 195-198)
+      if (currentViewId === '5.2.3') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        for (let r = 195; r <= 198; r++) {
+          grid.appendChild(buildCardLine34AndBox14(r, false));
+        }
+        container.appendChild(grid);
+        return;
+      }
+
+      // 5.2.4 มูลค่ายาคงคลัง (ก.ย.69 แถว 201-204 Pie ครึ่งซ้าย + แถว 205 แท็บสี่เหลี่ยมครึ่งขวา)
+      if (currentViewId === '5.2.4') {
+        const rows201_204 = [201, 202, 203, 204].map(r => getRowData(r));
+        const r205 = getRowData(205);
+
+        const card = document.createElement('div');
+        card.className = 'metric-card';
+        card.innerHTML = `
+          <div class="metric-title-tab">${r205.name}</div>
+          <div class="split-half-half">
+            <div class="pane-half">
+              <canvas class="pie-stock"></canvas>
+            </div>
+            <div class="pane-half">
+              <div class="rect-box-1-4">
+                <div class="rect-box-label">${r205.name} (ก.ย.69)</div>
+                <div class="rect-box-val">${formatNum(r205.sep69)}</div>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+
+        setTimeout(() => {
+          const chart = new Chart(card.querySelector('.pie-stock'), {
+            type: 'pie',
+            data: {
+              labels: rows201_204.map(x => x.name),
+              datasets: [{
+                data: rows201_204.map(x => x.sep69 || 1),
+                backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6']
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom' } }
+            }
+          });
+          activeCharts.push(chart);
+        }, 0);
+        return;
+      }
+
+      // อัตราสำรองยาคงคลัง (วัน) (แถว 206 เทียบเป้าหมาย)
+      if (currentViewId === '5.2.4_days') {
+        container.appendChild(buildCardLine34AndBox14(206, true));
+        return;
+      }
+
+      // 5.2.6 มูลค่าเบิกยา referback (แถว 234)
+      if (currentViewId === '5.2.6') {
+        container.appendChild(buildCardLine34AndBox14(234, false));
+        return;
+      }
+
+      // 5.2.7 งานสนับสนุนสถานบริการระดับรอง (รพ.สต) (แถว 238, 241)
+      if (currentViewId === '5.2.7') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [238, 241].forEach(r => grid.appendChild(buildCardLine34AndBox14(r, false)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 5.2.8 มูลค่าสนับสนุนยาให้หน่วยงานราชการ/หน่วยงานอื่นๆ (แถว 245)
+      if (currentViewId === '5.2.8') {
+        container.appendChild(buildCardLine34AndBox14(245, false));
+        return;
+      }
+
+      // 5.2.9 งานบริการจ่ายยาเสพติด (แถว 247-248)
+      if (currentViewId === '5.2.9') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [247, 248].forEach(r => grid.appendChild(buildCardLine34AndBox14(r, false)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // งานเภสัชกรรมการผลิต (แถว 253-259)
+      if (currentViewId === '6_prod') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        for (let r = 253; r <= 259; r++) {
+          grid.appendChild(buildCardLine34AndBox14(r, false));
+        }
+        container.appendChild(grid);
+        return;
+      }
+
+      // 7.1 Visit (แถว 269-271)
+      if (currentViewId === '7.1') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [269, 270, 271].forEach(r => grid.appendChild(buildCardLine34AndBox14(r, false)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 7.2 จำนวนรายการสั่งจ่ายยา+มูลค่า (ยานอกบัญชี รพสต.) (แถว 273-274)
+      if (currentViewId === '7.2') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [273, 274].forEach(r => grid.appendChild(buildCardLine34AndBox14(r, false)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 7.3 ข้อมูล Medication error/ความเสี่ยง (แถว 276-282)
+      if (currentViewId === '7.3') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        for (let r = 276; r <= 282; r++) {
+          grid.appendChild(buildCardLine34AndBox14(r, false));
+        }
+        container.appendChild(grid);
+        return;
+      }
+
+      // 7.4 งานคุ้มครองผู้บริโภคด้านสาธารณสุข (แถว 293-294)
+      if (currentViewId === '7.4') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [293, 294].forEach(r => grid.appendChild(buildCardLine34AndBox14(r, false)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 7.5 ปริมาณงาน หน่วย รพสต. (แถว 296-297)
+      if (currentViewId === '7.5') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [296, 297].forEach(r => grid.appendChild(buildCardLine34AndBox14(r, false)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 7.6 กิจกรรมเยี่ยมผู้ป่วย (แถว 299-300)
+      if (currentViewId === '7.6') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [299, 300].forEach(r => grid.appendChild(buildCardLine34AndBox14(r, false)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 7.7 งานกัญชาทางการแพทย์ (แถว 302-303)
+      if (currentViewId === '7.7') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [302, 303].forEach(r => grid.appendChild(buildCardLine34AndBox14(r, false)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 7.8 งานบริการเภสัชกรรมทางไกล (แถว 305-306)
+      if (currentViewId === '7.8') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [305, 306].forEach(r => grid.appendChild(buildCardLine34AndBox14(r, false)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 7.9 RDU PCU (ร้อยละ รพสต.ที่ผ่านเกณฑ์) (แถว 307 กราฟแนวโน้มเทียบเป้าหมาย)
+      if (currentViewId === '7.9') {
+        const d = getRowData(307);
+        const card = document.createElement('div');
+        card.className = 'metric-card';
+        card.innerHTML = `
+          <div class="metric-title-tab">${d.name}</div>
+          <div class="pane-full"><canvas></canvas></div>
+        `;
+        container.appendChild(card);
+        setTimeout(() => {
+          createMonthlyLineChart(card.querySelector('canvas'), d, true);
+        }, 0);
+        return;
+      }
+
+      // 7.10 การเผยแพร่ความรู้ (แถว 311-313)
+      if (currentViewId === '7.10') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [311, 312, 313].forEach(r => grid.appendChild(buildCardLine34AndBox14(r, false)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 7.11 งานให้คำปรึกษาด้านการใช้ยา (แถว 315-320)
+      if (currentViewId === '7.11') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        for (let r = 315; r <= 320; r++) {
+          grid.appendChild(buildCardLine34AndBox14(r, false));
+        }
+        container.appendChild(grid);
+        return;
+      }
+
+      // 9 -> 1) RDU 12 ข้อ (แถว 331-343 กราฟแท่งรายเดือน + รวมปี 69 คนละสี เทียบเป้าหมาย)
+      if (currentViewId === '9_1') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        for (let r = 331; r <= 343; r++) {
+          const d = getRowData(r);
+          const card = document.createElement('div');
+          card.className = 'metric-card';
+          card.innerHTML = `
+            <div class="metric-title-tab">${d.name}</div>
+            <div class="pane-full"><canvas></canvas></div>
+          `;
+          grid.appendChild(card);
+          setTimeout(() => {
+            createRDUMonthlyBarChart(card.querySelector('canvas'), d);
+          }, 0);
+        }
+        container.appendChild(grid);
+        return;
+      }
+
+      // 9 -> 2) ADR แพ้ยาซ้ำ (ครั้ง) (แถว 344)
+      if (currentViewId === '9_2') {
+        container.appendChild(buildCardLine34AndBox14(344, false));
+        return;
+      }
+
+      // 9 -> 4) HAD (แถว 351-353 เทียบเป้าหมาย)
+      if (currentViewId === '9_4') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        [351, 352, 353].forEach(r => grid.appendChild(buildCardLine34AndBox14(r, true)));
+        container.appendChild(grid);
+        return;
+      }
+
+      // 9 -> 5) ร้อยละการปฏิบัติตามแนวทางการสั่งใช้ยาต้านจุลชีพ (แถว 357-363 เทียบเป้าหมาย)
+      if (currentViewId === '9_5_1') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        for (let r = 357; r <= 363; r++) {
+          grid.appendChild(buildCardLine34AndBox14(r, true));
+        }
+        container.appendChild(grid);
+        return;
+      }
+
+      // 9 -> 5) อัตราความเหมาะสมตามเกณฑ์ในการใช้ยาต้านจุลชีพ (แถว 365-371 เทียบเป้าหมาย)
+      if (currentViewId === '9_5_2') {
+        const grid = document.createElement('div');
+        grid.className = 'page-grid-2col';
+        for (let r = 365; r <= 371; r++) {
+          grid.appendChild(buildCardLine34AndBox14(r, true));
+        }
+        container.appendChild(grid);
+        return;
+      }
+
+      // 9 -> 5) ร้อยละการสั่งยาตรงตามเงื่อนไข (แถว 375)
+      if (currentViewId === '9_5_3') {
+        container.appendChild(buildCardLine34AndBox14(375, false));
+        return;
+      }
+
+      // 9 -> 9) Medication reconciliation (แถว 380)
+      if (currentViewId === '9_9') {
+        container.appendChild(buildCardLine34AndBox14(380, false));
+        return;
+      }
+
+      // 9 -> 10) ความพึงพอใจของผู้มารับบริการ (แถว 382 กราฟแท่งรายเดือนเทียบเป้าหมาย)
+      if (currentViewId === '9_10') {
+        const d = getRowData(382);
+        const card = document.createElement('div');
+        card.className = 'metric-card';
+        card.innerHTML = `
+          <div class="metric-title-tab">${d.name}</div>
+          <div class="pane-full"><canvas></canvas></div>
+        `;
+        container.appendChild(card);
+        setTimeout(() => {
+          createMonthlyBarWithTargetChart(card.querySelector('canvas'), d);
+        }, 0);
+        return;
+      }
+    }
+
+    // ปุ่มเปิด/ปิดแถบเมนูด้านซ้าย
+    function toggleSidebar() {
+      document.getElementById('sidebarNav').classList.toggle('collapsed');
+    }
+
+    // ปุ่มสลับโหมดการเรียงคอลัมน์บนมือถือแนวตั้ง
+    function toggleMobileStack() {
+      document.body.classList.toggle('mobile-stack-mode');
+      activeCharts.forEach(c => c.resize());
+    }
+
+    // เริ่มต้นโหลดข้อมูลเมื่อเปิดหน้าเว็บ
+    window.addEventListener('DOMContentLoaded', () => {
+      loadFromGoogleSheet();
+    });
+  </script>
+</body>
+</html>
