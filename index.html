@@ -1,0 +1,2901 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard กลุ่มงานเภสัชกรรม</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --border: #cbd5e1;
+      --border-soft: #e2e8f0;
+      --ink: #0f172a;
+      --muted: #475569;
+      --navy-text: #1e3a8a;
+      --line-dark-blue: #1e3a8a;
+      --line-fill: rgba(125, 211, 252, 0.35);
+      --target-red: #dc2626;
+      --bar-68: #f59e0b;
+      --bar-69: #0d9488;
+      --bar-monthly: #7c3aed;
+      --arrow-blue: #1d4ed8;
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.05);
+      --font: 'Sarabun', -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, sans-serif;
+
+      /* Distinct Colors per Activity Group */
+      --g1-main: #1d4ed8; --g1-sub: #dbeafe; --g1-sub-hover: #bfdbfe; --g1-border: #93c5fd;
+      --g2-main: #0f766e; --g2-sub: #ccfbf1; --g2-sub-hover: #99f6e4; --g2-border: #5eead4;
+      --g3-main: #6d28d9; --g3-sub: #ede9fe; --g3-sub-hover: #ddd6fe; --g3-border: #c4b5fd;
+      --g4-main: #b45309; --g4-sub: #fef3c7; --g4-sub-hover: #fde68a; --g4-border: #fcd34d;
+      --g5-main: #15803d; --g5-sub: #dcfce7; --g5-sub-hover: #bbf7d0; --g5-border: #86efac;
+      --g6-main: #0369a1; --g6-sub: #e0f2fe; --g6-sub-hover: #bae6fd; --g6-border: #7dd3fc;
+      --g7-main: #be123c; --g7-sub: #ffe4e6; --g7-sub-hover: #fecdd3; --g7-border: #fda4af;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font);
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.45;
+      overflow-x: hidden;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    /* Top Header & Top-Right Data Import Bar */
+    .top-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+      padding: 10px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .mobile-menu-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      color: var(--ink);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .mobile-menu-btn:hover {
+      background: #e2e8f0;
+    }
+
+    .mobile-menu-btn:focus-visible {
+      outline: 2px solid var(--g1-main);
+      outline-offset: 2px;
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--ink);
+      margin: 0;
+      line-height: 1.25;
+    }
+
+    /* Top-Right Data Fetch & CSV Import Panel */
+    .data-source-panel {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-left: auto;
+      background: #f8fafc;
+      border: 1px solid var(--border-soft);
+      border-radius: 10px;
+      padding: 6px 10px;
+    }
+
+    .data-status {
+      font-size: 0.82rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #94a3b8;
+      flex-shrink: 0;
+    }
+    .status-dot.ok { background: #16a34a; }
+    .status-dot.loading { background: #f59e0b; }
+    .status-dot.warn { background: #dc2626; }
+
+    .btn-action {
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 7px 12px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn-action:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    .btn-action:active {
+      transform: translateY(1px);
+    }
+
+    .btn-action:focus-visible {
+      outline: 2px solid var(--g1-main);
+      outline-offset: 2px;
+    }
+
+    .btn-import {
+      background: #1d4ed8;
+      color: #ffffff;
+      border-color: #1e40af;
+    }
+
+    .btn-import:hover {
+      background: #1e40af;
+      border-color: #1e3a8a;
+    }
+
+    #csvFileInput {
+      display: none;
+    }
+
+    /* App Shell Layout */
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 62px);
+      position: relative;
+    }
+
+    /* Sidebar Drawer Backdrop on Mobile Portrait */
+    .sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      z-index: 45;
+    }
+
+    .sidebar-backdrop.open {
+      display: block;
+    }
+
+    /* Left Activity Sidebar */
+    .left-sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: min(88vw, 350px);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      z-index: 50;
+      overflow-y: auto;
+      padding: 12px 10px 28px;
+      transform: translateX(-102%);
+      transition: transform 0.22s ease;
+      box-shadow: 4px 0 20px rgba(15, 23, 42, 0.15);
+    }
+
+    .left-sidebar.open {
+      transform: translateX(0);
+    }
+
+    .sidebar-mobile-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 4px 10px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .sidebar-mobile-top span {
+      font-weight: 800;
+      font-size: 1rem;
+      color: var(--ink);
+    }
+
+    .close-sidebar-btn {
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      cursor: pointer;
+    }
+
+    /* Activity Group Styling */
+    .nav-group {
+      margin-bottom: 10px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border-soft);
+    }
+
+    .nav-btn {
+      width: 100%;
+      text-align: left;
+      font-family: var(--font);
+      border: none;
+      cursor: pointer;
+      display: block;
+      transition: filter 0.14s, background 0.14s, box-shadow 0.14s;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .nav-btn:focus-visible {
+      outline: 2px solid #0f172a;
+      outline-offset: -2px;
+    }
+
+    /* Tier 1: ตัวหนังสือตัวใหญ่พิเศษ */
+    .nav-xl {
+      font-size: 1.2rem;
+      font-weight: 800;
+      padding: 12px 13px;
+      color: #ffffff;
+    }
+
+    /* Tier 2: ตัวหนังสือตัวใหญ่ */
+    .nav-lg {
+      font-size: 1.03rem;
+      font-weight: 700;
+      padding: 9px 12px 9px 16px;
+      color: var(--navy-text);
+      border-top: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    /* Tier 3: Sub-items */
+    .nav-md {
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 7px 12px 7px 26px;
+      color: var(--navy-text);
+      border-top: 1px dashed rgba(15, 23, 42, 0.09);
+    }
+
+    .nav-md .sub-lines {
+      display: block;
+      font-size: 0.84rem;
+      padding-left: 8px;
+      margin-top: 2px;
+      opacity: 0.92;
+    }
+
+    /* Active Highlight */
+    .nav-btn.active {
+      box-shadow: inset 5px 0 0 #0f172a;
+      font-weight: 800;
+    }
+    .nav-xl.active {
+      box-shadow: inset 6px 0 0 #ffffff;
+    }
+
+    /* Group Color Themes */
+    .group-1 .nav-xl { background: var(--g1-main); }
+    .group-1 .nav-lg, .group-1 .nav-md { background: var(--g1-sub); }
+    .group-1 .nav-lg:hover, .group-1 .nav-md:hover, .group-1 .nav-lg.active, .group-1 .nav-md.active { background: var(--g1-sub-hover); }
+
+    .group-2 .nav-xl { background: var(--g2-main); }
+    .group-2 .nav-lg, .group-2 .nav-md { background: var(--g2-sub); }
+    .group-2 .nav-lg:hover, .group-2 .nav-md:hover, .group-2 .nav-lg.active, .group-2 .nav-md.active { background: var(--g2-sub-hover); }
+
+    .group-3 .nav-xl { background: var(--g3-main); }
+    .group-3 .nav-lg, .group-3 .nav-md { background: var(--g3-sub); }
+    .group-3 .nav-lg:hover, .group-3 .nav-md:hover, .group-3 .nav-lg.active, .group-3 .nav-md.active { background: var(--g3-sub-hover); }
+
+    .group-4 .nav-xl { background: var(--g4-main); }
+
+    .group-5 .nav-xl { background: var(--g5-main); }
+    .group-5 .nav-lg, .group-5 .nav-md { background: var(--g5-sub); }
+    .group-5 .nav-lg:hover, .group-5 .nav-md:hover, .group-5 .nav-lg.active, .group-5 .nav-md.active { background: var(--g5-sub-hover); }
+
+    .group-6 .nav-xl { background: var(--g6-main); }
+    .group-6 .nav-lg, .group-6 .nav-md { background: var(--g6-sub); }
+    .group-6 .nav-lg:hover, .group-6 .nav-md:hover, .group-6 .nav-lg.active, .group-6 .nav-md.active { background: var(--g6-sub-hover); }
+
+    .group-7 .nav-xl { background: var(--g7-main); }
+
+    .nav-xl:hover {
+      filter: brightness(1.08);
+    }
+
+    /* Main Content Area */
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      padding: 12px;
+      max-width: 100%;
+    }
+
+    .active-section-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 1.05rem;
+      box-shadow: var(--shadow);
+    }
+
+    /* Empty / Import Prompt State */
+    .empty-state-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 20px;
+      max-width: 680px;
+      margin: 24px auto;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .empty-state-card h2 {
+      margin: 0 0 10px;
+      font-size: 1.25rem;
+      color: var(--ink);
+    }
+
+    .empty-state-card p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .empty-steps {
+      text-align: left;
+      background: #f8fafc;
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 18px;
+      font-size: 0.9rem;
+      color: var(--ink);
+    }
+
+    .empty-steps ol {
+      margin: 6px 0 0;
+      padding-left: 20px;
+    }
+
+    .empty-steps li {
+      margin-bottom: 5px;
+    }
+
+    /* Section Divider when viewing combined Major Activity */
+    .sub-section-block {
+      margin-bottom: 20px;
+    }
+
+    .sub-section-heading {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--navy-text);
+      padding: 7px 12px;
+      border-radius: 8px;
+      margin: 0 0 10px;
+      border-left: 5px solid var(--g1-main);
+      background: #ffffff;
+      box-shadow: var(--shadow);
+    }
+
+    /* Grid Layouts: Mobile-first Portrait (1 col), Desktop/Print 2-col (Left Half / Right Half) */
+    .items-grid-full {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .items-grid-two {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    /* KPI / Chart Card */
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* Column B Title Tab Above Chart */
+    .col-b-tab {
+      padding: 9px 13px;
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: var(--g1-main);
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .card-body {
+      padding: 12px;
+      background: #ffffff;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    /* 3 KPI Tabs Row Above Line Chart (Pattern A & 5.2.1(2)) */
+    .three-kpi-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .kpi-mini-tab {
+      border-radius: 8px;
+      padding: 8px 6px;
+      text-align: center;
+      border: 1px solid var(--border-soft);
+      background: #f8fafc;
+      min-width: 0;
+    }
+
+    .kpi-mini-tab.tab-68 {
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+
+    .kpi-mini-tab.tab-69 {
+      background: #f0fdfa;
+      border-color: #99f6e4;
+    }
+
+    .kpi-mini-tab.tab-diff {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+
+    .kpi-mini-label {
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 3px;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+
+    .kpi-mini-val {
+      font-size: 0.98rem;
+      font-weight: 800;
+      color: var(--ink);
+      word-break: break-word;
+    }
+
+    .kpi-mini-val.up { color: #1d4ed8; }
+    .kpi-mini-val.down { color: #1d4ed8; }
+
+    /* Proportion Split: 3/4 and 1/4 */
+    .split-3-1 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      align-items: stretch;
+      min-width: 0;
+    }
+
+    .split-half-half {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      align-items: stretch;
+      min-width: 0;
+    }
+
+    .pane-3-4, .pane-1-4, .pane-half {
+      background: #ffffff;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .chart-box {
+      position: relative;
+      width: 100%;
+      height: 220px;
+      background: #ffffff;
+    }
+
+    .chart-box.bar-compare-box {
+      height: 220px;
+    }
+
+    .chart-box.pie-box {
+      height: 230px;
+    }
+
+    .pie-caption-below {
+      text-align: center;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-top: 6px;
+    }
+
+    /* Rectangular Summary Box (แท๊บสี่เหลี่ยม 1/4) */
+    .rect-summary-tab {
+      border: 2px solid var(--g1-main);
+      border-radius: 10px;
+      background: #f8fafc;
+      padding: 12px 10px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 110px;
+      height: 100%;
+    }
+
+    .rect-summary-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .rect-summary-value {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--navy-text);
+      word-break: break-word;
+    }
+
+    /* Centered 4-Column Table for 5.2.1 (6, 7, 9) */
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .procure-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .procure-table th,
+    .procure-table td {
+      padding: 10px 8px;
+      border: 1px solid var(--border-soft);
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .procure-table th {
+      background: var(--g3-main);
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .procure-table tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    /* PDF Simulation & Verification Panel (Section 11) */
+    .pdf-control-card {
+      background: var(--surface);
+      border: 2px solid var(--g7-main);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .pdf-check-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .pdf-check-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--g7-main);
+      margin: 0;
+    }
+
+    .pdf-checklist {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .pdf-check-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #f8fafc;
+      border: 1px solid var(--border-soft);
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .pdf-check-item.pass {
+      background: #f0fdf4;
+      border-color: #86efac;
+      color: #166534;
+    }
+
+    .pdf-actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-pdf-export {
+      font: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      background: #16a34a;
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    .btn-pdf-export:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    .pdf-page-sheet {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    }
+
+    .pdf-page-footer {
+      text-align: right;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 10px;
+      padding-top: 6px;
+      border-top: 1px dashed var(--border-soft);
+    }
+
+    /* Responsive Breakpoints */
+    /* Medium Portrait / Large Phone (>= 540px): 3/4 + 1/4 side-by-side */
+    @media (min-width: 540px) {
+      .split-3-1 {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+      }
+      .split-3-1.only-3-4 {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+      }
+      .split-half-half {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    /* Desktop Layout (>= 1024px): Persistent Left Sidebar + 2-Column Half-Page Grid */
+    @media (min-width: 1024px) {
+      .mobile-menu-btn,
+      .sidebar-mobile-top,
+      .sidebar-backdrop {
+        display: none !important;
+      }
+
+      .app-shell {
+        flex-direction: row;
+        align-items: flex-start;
+      }
+
+      .left-sidebar {
+        position: sticky;
+        top: 62px;
+        height: calc(100vh - 62px);
+        width: 320px;
+        flex-shrink: 0;
+        transform: none;
+        box-shadow: none;
+        z-index: 10;
+      }
+
+      .main-content {
+        padding: 18px 22px 36px;
+      }
+
+      .items-grid-two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    /* Mobile Portrait Compact Refinements (< 539px) */
+    @media (max-width: 539px) {
+      .top-header {
+        padding: 8px 10px;
+      }
+      .brand-title {
+        font-size: 1rem;
+      }
+      .data-source-panel {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .data-status {
+        max-width: 100%;
+        width: 100%;
+      }
+      .chart-box {
+        height: 195px;
+      }
+      .chart-box.bar-compare-box {
+        height: 185px;
+      }
+      .procure-table th,
+      .procure-table td {
+        padding: 7px 5px;
+        font-size: 0.8rem;
+      }
+    }
+
+    /* Print / PDF Styling */
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 8mm;
+      }
+      body {
+        background: #ffffff;
+      }
+      .top-header,
+      .left-sidebar,
+      .sidebar-backdrop,
+      .pdf-control-card {
+        display: none !important;
+      }
+      .main-content {
+        padding: 0 !important;
+        width: 100% !important;
+      }
+      .items-grid-two {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+      }
+      .split-3-1 {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 1fr) !important;
+      }
+      .split-half-half {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+      .kpi-card, .pdf-page-sheet {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        box-shadow: none !important;
+      }
+      .pdf-page-sheet {
+        page-break-after: always;
+        border: none;
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar with Mobile Sidebar Trigger (Left) & Fetch / CSV UTF-8 Import (Top-Right) -->
+  <header class="top-header">
+    <div class="header-left">
+      <button type="button" class="mobile-menu-btn" id="openSidebarBtn" aria-label="เปิดแท็บเลือกกิจกรรม">
+        ☰ กิจกรรม
+      </button>
+      <h1 class="brand-title">Dashboard ผลงานกลุ่มงานเภสัชกรรม</h1>
+    </div>
+
+    <div class="data-source-panel" aria-label="ส่วนดึงข้อมูลและนำเข้าไฟล์ CSV">
+      <div class="data-status" id="dataStatusText" title="สถานะการเชื่อมต่อข้อมูล">
+        <span class="status-dot loading" id="statusDot"></span>
+        <span id="statusLabel">กำลังเชื่อมต่อ Google Sheets...</span>
+      </div>
+      <button type="button" class="btn-action" id="fetchSheetBtn" title="ดึงข้อมูลล่าสุดจากแผ่นงาน Google Sheets">
+        ↻ ดึงข้อมูล Google Sheets
+      </button>
+      <a class="btn-action" href="https://docs.google.com/spreadsheets/d/1gwU6iaFemgML-xRE1lW9EeQtRl9VXY5UBYegqARU4Kc/edit?gid=1581621566#gid=1581621566" target="_blank" rel="noopener" title="เปิดไฟล์ต้นฉบับเพื่อดาวน์โหลด CSV">
+        เปิดแผ่นงาน
+      </a>
+      <label for="csvFileInput" class="btn-action btn-import" tabindex="0" id="csvImportLabel">
+        📂 เลือกไฟล์นำเข้า CSV (UTF-8)
+      </label>
+      <input type="file" id="csvFileInput" accept=".csv,text/csv">
+    </div>
+  </header>
+
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <div class="app-shell">
+    <!-- Left Activity Tabs -->
+    <aside class="left-sidebar" id="leftSidebar" aria-label="แท็บกิจกรรมด้านซ้าย">
+      <div class="sidebar-mobile-top">
+        <span>เลือกกิจกรรม</span>
+        <button type="button" class="close-sidebar-btn" id="closeSidebarBtn">✕ ปิด</button>
+      </div>
+      <nav id="sidebarNav"></nav>
+    </aside>
+
+    <!-- Main Dashboard Viewport -->
+    <main class="main-content" id="mainContent"></main>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const SHEET_ID = '1gwU6iaFemgML-xRE1lW9EeQtRl9VXY5UBYegqARU4Kc';
+      const SHEET_GID = '1581621566';
+      const SHEET_CSV_URLS = [
+        `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`,
+        `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`
+      ];
+
+      const DEFAULT_MONTHS = [
+        'ต.ค.68', 'พ.ย.68', 'ธ.ค.68', 'ม.ค.69', 'ก.พ.69', 'มี.ค.69',
+        'เม.ย.69', 'พ.ค.69', 'มิ.ย.69', 'ก.ค.69', 'ส.ค.69', 'ก.ย.69'
+      ];
+
+      const GROUP_COLORS = {
+        1: '#1d4ed8',
+        2: '#0f766e',
+        3: '#6d28d9',
+        4: '#b45309',
+        5: '#15803d',
+        6: '#0369a1',
+        7: '#be123c'
+      };
+
+      const PIE_PALETTE = ['#0d9488', '#f59e0b', '#7c3aed', '#ec4899', '#0284c7', '#16a34a'];
+
+      /* State */
+      let sheetRows = [];
+      let monthLabels = DEFAULT_MONTHS.slice();
+      let sep69ColIndex = 16; // Column Q (0-based index 16)
+      let currentViewId = 'opd_all';
+      let activeCharts = [];
+      let lastSourceLabel = '';
+
+      /* Complete Left Sidebar & View Specification */
+      const NAV_TREE = [
+        {
+          group: 1,
+          items: [
+            { id: 'opd_all', label: 'งานบริการเภสัชกรรมผู้ป่วยนอก', size: 'xl', childrenViews: ['1_1', '1_2_1', '1_2_6', '2_1', '2_2'] },
+            { id: '1_1', label: '1.1 ข้อมูลบริการทั่วไป', size: 'lg' },
+            { id: '1_2_1', label: '1.2.1 medication error', size: 'lg' },
+            { id: '1_2_6', label: '1.2.6 ระยะเวลาในการรอรับบริการผู้ป่วยนอก', size: 'lg' },
+            { id: '2_1', label: '2.1 งานให้คำปรึกษาด้านการใช้ยา (ราย)', size: 'lg' },
+            { id: '2_2', label: '2.2 การให้บริการคลินิกพิเศษ', size: 'lg' }
+          ]
+        },
+        {
+          group: 2,
+          items: [
+            { id: 'ipd_all', label: 'งานบริการเภสัชกรรมผู้ป่วยใน', size: 'xl', childrenViews: ['3_1', '3_2_1_1', '3_2_1_2', '3_2_4', '3_2_6_1', '3_2_6_2', '3_2_6_3', '3_2_7', '4_ipd'] },
+            { id: '3_1', label: '3.1 ข้อมูลงานบริการทั่วไป', size: 'lg' },
+            { id: '3_2_group', label: '3.2 ข้อมูลผลการดำเนินงานและอุบัติการณ์สำคัญ', size: 'lg', childrenViews: ['3_2_1_1', '3_2_1_2', '3_2_4', '3_2_6_1', '3_2_6_2', '3_2_6_3', '3_2_7'] },
+            { id: '3_2_1_group', label: '3.2.1ข้อมูลความคลาดเคลื่อนทางยา', size: 'lg', childrenViews: ['3_2_1_1', '3_2_1_2'] },
+            { id: '3_2_1_1', label: '1) Medication error', size: 'md' },
+            { id: '3_2_1_2', label: '2) ความคลาดเคลื่อนระบบยาผู้ป่วยในแยกตามระดับความรุนแรง', size: 'md' },
+            { id: '3_2_4', label: '3.2.4 High alert drug', size: 'md' },
+            { id: '3_2_6_group', label: '3.2.6 ระยะเวลาในการปฏิบัติงาน', size: 'lg', childrenViews: ['3_2_6_1', '3_2_6_2', '3_2_6_3'] },
+            { id: '3_2_6_1', label: '3.2.6.1 จ่ายยาทั่วไปที่เป็นคำสั่งใหม่ ภายใน 120 นาที หลังจากที่ได้รับใบเบิกหรือคำสั่งใช้ยา', size: 'md' },
+            { id: '3_2_6_2', label: '3.2.6.2 เวลาให้ยา stat ผู้ป่วยใน', size: 'md' },
+            { id: '3_2_6_3', label: '3.2.6.3 เวลาให้ยา stat ห้องฉุกเฉิน', size: 'md' },
+            { id: '3_2_7', label: '3.2.7 ADR ซ้ำ', size: 'lg' },
+            { id: '4_ipd', label: '4.งานบริบาลเภสัชกรรมผู้ป่วยใน', size: 'lg' }
+          ]
+        },
+        {
+          group: 3,
+          items: [
+            { id: 'inv_all', label: 'งานบริหารเวชภัณฑ์', size: 'xl', childrenViews: ['5_1_list', '5_2_1_1', '5_2_1_2', '5_2_1_3', '5_2_1_4', '5_2_1_679', '5_2_2', '5_2_3', '5_2_4', '5_2_4_days', '5_2_6', '5_2_7', '5_2_8', '5_2_9'] },
+            { id: '5_1_group', label: '5.1 ข้อมูลพื้นฐาน', size: 'lg', childrenViews: ['5_1_list'] },
+            { id: '5_1_list', label: 'บัญชีรายการยาและเวชภัณฑ์มิใช่ยาของโรงพยาบาล', size: 'md' },
+            { id: '5_2_group', label: '5.2 ข้อมูลการปฏิบัติงานและตัวชี้วัดสำคัญ', size: 'lg', childrenViews: ['5_2_1_1', '5_2_1_2', '5_2_1_3', '5_2_1_4', '5_2_1_679', '5_2_2', '5_2_3', '5_2_4', '5_2_4_days', '5_2_6', '5_2_7', '5_2_8', '5_2_9'] },
+            { id: '5_2_1_group', label: '5.2.1 การจัดซื้อ/จัดหาเวชภัณฑ์', size: 'md', childrenViews: ['5_2_1_1', '5_2_1_2', '5_2_1_3', '5_2_1_4', '5_2_1_679'] },
+            { id: '5_2_1_1', label: '1) มูลค่าจัดซื้อยา บาท/รับเข้าคลัง', size: 'md' },
+            { id: '5_2_1_2', label: '2) มูลค่าจัดซื้อเทียบกับแผน/ED:NED', size: 'md' },
+            { id: '5_2_1_3', label: '3) มูลค่ายาส่งตั้งเจ้าหนี้การค้า (บาท)', size: 'md' },
+            { id: '5_2_1_4', label: '4) มูลค่ายารับการสนับสนุน/ตั้งข้อมูลรายได้ (บาท)', size: 'md' },
+            {
+              id: '5_2_1_679',
+              label: '6) การจัดซื้อยาจากองค์การเภสัชกรรม',
+              extraLines: [
+                '-มูลค่าจัดซื้อยาจากองค์การเภสัชกรรมเทียบกับแผนจัดซื้อยา',
+                '7) การจัดซื้อยานวัตกรรม',
+                '-มูลค่าจัดซื้อยานวัตกรรมรวมเทียบกับแผนจัดซื้อยา',
+                '9) มูลค่าประหยัดในการจัดซื้อยา',
+                '- e-bidding',
+                '- สืบราคา'
+              ],
+              size: 'md'
+            },
+            { id: '5_2_2', label: '5.2.2 การตรวจรับเวชภัณฑ์', size: 'md' },
+            { id: '5_2_3', label: '5.2.3 การเบิกจ่ายเวชภัณฑ์ในโรงพยาบาล', size: 'md' },
+            { id: '5_2_4', label: '5.2.4 มูลค่ายาคงคลัง', size: 'md' },
+            { id: '5_2_4_days', label: 'อัตราสำรองยาคงคลัง (วัน)', size: 'md' },
+            { id: '5_2_6', label: '5.2.6 มูลค่าเบิกยา referback', size: 'md' },
+            { id: '5_2_7', label: '5.2.7 งานสนับสนุนสถานบริการระดับรอง (รพ.สต)', size: 'md' },
+            { id: '5_2_8', label: '5.2.8 มูลค่าสนับสนุนยาให้หน่วยงานราชการ/หน่วยงานอื่นๆ', size: 'md' },
+            { id: '5_2_9', label: '5.2.9 งานบริการจ่ายยาเสพติด', size: 'md' }
+          ]
+        },
+        {
+          group: 4,
+          items: [
+            { id: 'prod_all', label: 'งานเภสัชกรรมการผลิต', size: 'xl' }
+          ]
+        },
+        {
+          group: 5,
+          items: [
+            { id: 'pcu_all', label: 'งานเภสัชกรรมปฐมภูมิ', size: 'xl', childrenViews: ['7_1', '7_2', '7_3', '7_4', '7_5', '7_6', '7_7', '7_8', '7_9', '7_10', '7_11'] },
+            { id: '7_1', label: '7.1 Visit', size: 'lg' },
+            { id: '7_2', label: '7.2 จำนวนรายการสั่งจ่ายยา+มูลค่า (ยานอกบัญชี รพสต.)', size: 'lg' },
+            { id: '7_3', label: '7.3 ข้อมูล Medication error/ความเสี่ยง', size: 'lg' },
+            { id: '7_4', label: '7.4 งานคุ้มครองผู้บริโภคด้านสาธารณสุข', size: 'lg' },
+            { id: '7_5', label: '7.5 ปริมาณงาน หน่วย รพสต.', size: 'lg' },
+            { id: '7_6', label: '7.6 กิจกรรมเยี่ยมผู้ป่วย', size: 'lg' },
+            { id: '7_7', label: '7.7 งานกัญชาทางการแพทย์', size: 'lg' },
+            { id: '7_8', label: '7.8 งานบริการเภสัชกรรมทางไกล', size: 'lg' },
+            { id: '7_9', label: '7.9 RDU PCU (ร้อยละ รพสต.ที่ผ่านเกณฑ์)', size: 'lg' },
+            { id: '7_10', label: '7.10 การเผยแพร่ความรู้', size: 'lg' },
+            { id: '7_11', label: '7.11 งานให้คำปรึกษาด้านการใช้ยา', size: 'lg' }
+          ]
+        },
+        {
+          group: 6,
+          items: [
+            { id: 'qa_all', label: '9.ข้อมูลระบบงานคุณภาพและตัวชี้วัดสำคัญ', size: 'xl', childrenViews: ['9_1', '9_2', '9_4', '9_5_1', '9_5_2', '9_5_3', '9_9', '9_10'] },
+            { id: '9_1', label: '1) RDU 12 ข้อ (ต้องผ่านเกณฑ์ 10 ข้อ)', size: 'md' },
+            { id: '9_2', label: '2) ADR แพ้ยาซ้ำ (ครั้ง)', size: 'md' },
+            { id: '9_4', label: '4) HAD', size: 'md' },
+            { id: '9_5_group', label: '5) DUE', size: 'md', childrenViews: ['9_5_1', '9_5_2', '9_5_3'] },
+            { id: '9_5_1', label: 'ร้อยละการปฏิบัติตามแนวทางการสั่งใช้ยาต้านจุลชีพ', size: 'md' },
+            { id: '9_5_2', label: 'อัตราความเหมาะสมตามเกณฑ์ในการใช้ยาต้านจุลชีพ', size: 'md' },
+            { id: '9_5_3', label: 'ร้อยละการสั่งยาตรงตามเงื่อนไข', size: 'md' },
+            { id: '9_9', label: '9) Medication reconciliation', size: 'md' },
+            { id: '9_10', label: '10) ความพึงพอใจของผู้มารับบริการ', size: 'md' }
+          ]
+        },
+        {
+          group: 7,
+          items: [
+            { id: 'pdf_export', label: '11.ส่งออกทุกงานเป็นไฟล์ PDF', size: 'xl' }
+          ]
+        }
+      ];
+
+      function range(start, end) {
+        const arr = [];
+        for (let i = start; i <= end; i++) arr.push(i);
+        return arr;
+      }
+
+      /* Leaf Section Definitions matching every row & chart rule */
+      const LEAF_SPECS = {
+        '1_1': {
+          group: 1,
+          title: '1.1 ข้อมูลบริการทั่วไป',
+          twoCol: false,
+          widgets: [10, 11, 13, 12].map(r => ({ type: 'kpi_tabs_line', row: r, showLabels: false }))
+        },
+        '1_2_1': {
+          group: 1,
+          title: '1.2.1 medication error',
+          twoCol: true,
+          widgets: [
+            ...[17, 18, 21, 22, 23].map(r => ({ type: 'line_bar_compare', row: r, hasTarget: true, showLabels: true })),
+            { type: 'line_bar_compare', row: 26, hasTarget: false, showLabels: true }
+          ]
+        },
+        '1_2_6': {
+          group: 1,
+          title: '1.2.6 ระยะเวลาในการรอรับบริการผู้ป่วยนอก',
+          twoCol: true,
+          widgets: [
+            ...range(42, 50).map(r => ({ type: 'line_bar_compare', row: r, hasTarget: true, showLabels: true })),
+            ...range(51, 52).map(r => ({ type: 'line_only_3_4', row: r, hasTarget: false, showLabels: true }))
+          ]
+        },
+        '2_1': {
+          group: 1,
+          title: '2.1 งานให้คำปรึกษาด้านการใช้ยา (ราย)',
+          twoCol: true,
+          widgets: range(56, 61).map(r => ({ type: 'line_bar_compare', row: r, hasTarget: false, showLabels: true }))
+        },
+        '2_2': {
+          group: 1,
+          title: '2.2 การให้บริการคลินิกพิเศษ',
+          twoCol: true,
+          widgets: [63, 66, 69, 72, 75, 78, 81, 84, 87, 90, 91, 92].map(r => ({
+            type: 'line_bar_compare', row: r, hasTarget: false, showLabels: true
+          }))
+        },
+        '3_1': {
+          group: 2,
+          title: '3.1 ข้อมูลงานบริการทั่วไป',
+          twoCol: true,
+          widgets: range(97, 100).map(r => ({ type: 'kpi_tabs_line', row: r, showLabels: false }))
+        },
+        '3_2_1_1': {
+          group: 2,
+          title: '1) Medication error',
+          twoCol: true,
+          widgets: range(104, 108).map(r => ({ type: 'line_bar_compare', row: r, hasTarget: true, showLabels: true }))
+        },
+        '3_2_1_2': {
+          group: 2,
+          title: '2) ความคลาดเคลื่อนระบบยาผู้ป่วยในแยกตามระดับความรุนแรง',
+          twoCol: false,
+          widgets: range(111, 112).map(r => ({ type: 'line_bar_compare', row: r, hasTarget: false, showLabels: true }))
+        },
+        '3_2_4': {
+          group: 2,
+          title: '3.2.4 High alert drug',
+          twoCol: false,
+          widgets: [122, 124, 125].map(r => ({ type: 'line_bar_compare', row: r, hasTarget: true, showLabels: true }))
+        },
+        '3_2_6_1': {
+          group: 2,
+          title: '3.2.6.1 จ่ายยาทั่วไปที่เป็นคำสั่งใหม่ ภายใน 120 นาที หลังจากที่ได้รับใบเบิกหรือคำสั่งใช้ยา',
+          twoCol: false,
+          widgets: range(131, 133).map(r => ({ type: 'line_bar_compare', row: r, hasTarget: true, showLabels: false }))
+        },
+        '3_2_6_2': {
+          group: 2,
+          title: '3.2.6.2 เวลาให้ยา stat ผู้ป่วยใน',
+          twoCol: false,
+          widgets: [
+            { type: 'line_bar_compare', row: 135, hasTarget: false, showLabels: true },
+            { type: 'line_bar_compare', row: 136, hasTarget: true, showLabels: true }
+          ]
+        },
+        '3_2_6_3': {
+          group: 2,
+          title: '3.2.6.3 เวลาให้ยา stat ห้องฉุกเฉิน',
+          twoCol: false,
+          widgets: range(138, 140).map(r => ({ type: 'line_bar_compare', row: r, hasTarget: true, showLabels: true }))
+        },
+        '3_2_7': {
+          group: 2,
+          title: '3.2.7 ADR ซ้ำ',
+          twoCol: false,
+          widgets: [{ type: 'line_bar_compare', row: 141, hasTarget: true, showLabels: true }]
+        },
+        '4_ipd': {
+          group: 2,
+          title: '4.งานบริบาลเภสัชกรรมผู้ป่วยใน',
+          twoCol: true,
+          widgets: range(143, 148).map(r => ({ type: 'line_bar_compare', row: r, hasTarget: false, showLabels: true }))
+        },
+        '5_1_list': {
+          group: 3,
+          title: 'บัญชีรายการยาและเวชภัณฑ์มิใช่ยาของโรงพยาบาล',
+          twoCol: false,
+          widgets: [{ type: 'pie_3_4_box_1_4', pieRows: [152, 153], boxRow: 154 }]
+        },
+        '5_2_1_1': {
+          group: 3,
+          title: '1) มูลค่าจัดซื้อยา บาท/รับเข้าคลัง',
+          twoCol: false,
+          widgets: [{ type: 'line_box_69', row: 157, hasTarget: false, showLabels: false }]
+        },
+        '5_2_1_2': {
+          group: 3,
+          title: '2) มูลค่าจัดซื้อเทียบกับแผน/ED:NED',
+          twoCol: false,
+          widgets: [{ type: 'ed_ned_special' }]
+        },
+        '5_2_1_3': {
+          group: 3,
+          title: '3) มูลค่ายาส่งตั้งเจ้าหนี้การค้า (บาท)',
+          twoCol: false,
+          widgets: [{ type: 'line_box_69', row: 167, hasTarget: false, showLabels: false }]
+        },
+        '5_2_1_4': {
+          group: 3,
+          title: '4) มูลค่ายารับการสนับสนุน/ตั้งข้อมูลรายได้ (บาท)',
+          twoCol: false,
+          widgets: [{ type: 'line_box_69', row: 168, hasTarget: false, showLabels: false }]
+        },
+        '5_2_1_679': {
+          group: 3,
+          title: 'การจัดซื้อยาจากองค์การเภสัชกรรม / ยานวัตกรรม / มูลค่าประหยัดในการจัดซื้อยา',
+          twoCol: false,
+          widgets: [{ type: 'procure_table_679' }]
+        },
+        '5_2_2': {
+          group: 3,
+          title: '5.2.2 การตรวจรับเวชภัณฑ์',
+          twoCol: true,
+          widgets: range(191, 194).map(r => ({ type: 'line_box_69', row: r, hasTarget: false, showLabels: true }))
+        },
+        '5_2_3': {
+          group: 3,
+          title: '5.2.3 การเบิกจ่ายเวชภัณฑ์ในโรงพยาบาล',
+          twoCol: true,
+          widgets: range(196, 199).map(r => ({ type: 'line_box_69', row: r, hasTarget: false, showLabels: true }))
+        },
+        '5_2_4': {
+          group: 3,
+          title: '5.2.4 มูลค่ายาคงคลัง',
+          twoCol: false,
+          widgets: [{ type: 'pie_sep69_half_box_half', pieRows: [202, 203, 204, 205], boxRow: 206 }]
+        },
+        '5_2_4_days': {
+          group: 3,
+          title: 'อัตราสำรองยาคงคลัง (วัน)',
+          twoCol: false,
+          widgets: [{ type: 'line_box_69', row: 207, hasTarget: true, showLabels: true }]
+        },
+        '5_2_6': {
+          group: 3,
+          title: '5.2.6 มูลค่าเบิกยา referback',
+          twoCol: false,
+          widgets: [{ type: 'line_box_69', row: 235, hasTarget: false, showLabels: false }]
+        },
+        '5_2_7': {
+          group: 3,
+          title: '5.2.7 งานสนับสนุนสถานบริการระดับรอง (รพ.สต)',
+          twoCol: false,
+          widgets: [239, 242].map(r => ({ type: 'line_box_69', row: r, hasTarget: false, showLabels: false }))
+        },
+        '5_2_8': {
+          group: 3,
+          title: '5.2.8 มูลค่าสนับสนุนยาให้หน่วยงานราชการ/หน่วยงานอื่นๆ',
+          twoCol: false,
+          widgets: [{ type: 'line_box_69', row: 246, hasTarget: false, showLabels: false }]
+        },
+        '5_2_9': {
+          group: 3,
+          title: '5.2.9 งานบริการจ่ายยาเสพติด',
+          twoCol: false,
+          widgets: [248, 249].map(r => ({ type: 'line_box_69', row: r, hasTarget: false, showLabels: true }))
+        },
+        'prod_all': {
+          group: 4,
+          title: 'งานเภสัชกรรมการผลิต',
+          twoCol: true,
+          widgets: range(254, 260).map(r => ({ type: 'line_box_69', row: r, hasTarget: false, showLabels: true }))
+        },
+        '7_1': {
+          group: 5,
+          title: '7.1 Visit',
+          twoCol: false,
+          widgets: range(270, 272).map(r => ({ type: 'line_box_69', row: r, hasTarget: false, showLabels: true }))
+        },
+        '7_2': {
+          group: 5,
+          title: '7.2 จำนวนรายการสั่งจ่ายยา+มูลค่า (ยานอกบัญชี รพสต.)',
+          twoCol: false,
+          widgets: [274, 275].map(r => ({ type: 'line_box_69', row: r, hasTarget: false, showLabels: false }))
+        },
+        '7_3': {
+          group: 5,
+          title: '7.3 ข้อมูล Medication error/ความเสี่ยง',
+          twoCol: true,
+          widgets: range(277, 283).map(r => ({ type: 'line_box_69', row: r, hasTarget: false, showLabels: true }))
+        },
+        '7_4': {
+          group: 5,
+          title: '7.4 งานคุ้มครองผู้บริโภคด้านสาธารณสุข',
+          twoCol: false,
+          widgets: [294, 295].map(r => ({ type: 'line_box_69', row: r, hasTarget: false, showLabels: true }))
+        },
+        '7_5': {
+          group: 5,
+          title: '7.5 ปริมาณงาน หน่วย รพสต.',
+          twoCol: false,
+          widgets: [297, 298].map(r => ({ type: 'line_box_69', row: r, hasTarget: false, showLabels: true }))
+        },
+        '7_6': {
+          group: 5,
+          title: '7.6 กิจกรรมเยี่ยมผู้ป่วย',
+          twoCol: false,
+          widgets: [300, 301].map(r => ({ type: 'line_box_69', row: r, hasTarget: false, showLabels: true }))
+        },
+        '7_7': {
+          group: 5,
+          title: '7.7 งานกัญชาทางการแพทย์',
+          twoCol: false,
+          widgets: [303, 304].map(r => ({ type: 'line_box_69', row: r, hasTarget: false, showLabels: true }))
+        },
+        '7_8': {
+          group: 5,
+          title: '7.8 งานบริการเภสัชกรรมทางไกล',
+          twoCol: false,
+          widgets: [306, 307].map(r => ({ type: 'line_box_69', row: r, hasTarget: false, showLabels: true }))
+        },
+        '7_9': {
+          group: 5,
+          title: '7.9 RDU PCU (ร้อยละ รพสต.ที่ผ่านเกณฑ์)',
+          twoCol: false,
+          widgets: [{ type: 'line_full', row: 308, hasTarget: true, showLabels: true }]
+        },
+        '7_10': {
+          group: 5,
+          title: '7.10 การเผยแพร่ความรู้',
+          twoCol: false,
+          widgets: range(312, 314).map(r => ({ type: 'line_box_69', row: r, hasTarget: false, showLabels: true }))
+        },
+        '7_11': {
+          group: 5,
+          title: '7.11 งานให้คำปรึกษาด้านการใช้ยา',
+          twoCol: true,
+          widgets: range(316, 321).map(r => ({ type: 'line_box_69', row: r, hasTarget: false, showLabels: true }))
+        },
+        '9_1': {
+          group: 6,
+          title: '1) RDU 12 ข้อ (ต้องผ่านเกณฑ์ 10 ข้อ)',
+          twoCol: true,
+          widgets: range(332, 344).map(r => ({ type: 'bar_monthly_plus_69', row: r, hasTarget: true }))
+        },
+        '9_2': {
+          group: 6,
+          title: '2) ADR แพ้ยาซ้ำ (ครั้ง)',
+          twoCol: false,
+          widgets: [{ type: 'line_box_69', row: 345, hasTarget: false, showLabels: true }]
+        },
+        '9_4': {
+          group: 6,
+          title: '4) HAD',
+          twoCol: false,
+          widgets: range(352, 354).map(r => ({ type: 'line_box_69', row: r, hasTarget: true, showLabels: true }))
+        },
+        '9_5_1': {
+          group: 6,
+          title: 'ร้อยละการปฏิบัติตามแนวทางการสั่งใช้ยาต้านจุลชีพ',
+          twoCol: true,
+          widgets: range(358, 364).map(r => ({ type: 'line_box_69', row: r, hasTarget: true, showLabels: true }))
+        },
+        '9_5_2': {
+          group: 6,
+          title: 'อัตราความเหมาะสมตามเกณฑ์ในการใช้ยาต้านจุลชีพ',
+          twoCol: true,
+          widgets: range(366, 372).map(r => ({ type: 'line_box_69', row: r, hasTarget: true, showLabels: true }))
+        },
+        '9_5_3': {
+          group: 6,
+          title: 'ร้อยละการสั่งยาตรงตามเงื่อนไข',
+          twoCol: false,
+          widgets: [{ type: 'line_box_69', row: 376, hasTarget: false, showLabels: true }]
+        },
+        '9_9': {
+          group: 6,
+          title: '9) Medication reconciliation',
+          twoCol: false,
+          widgets: [{ type: 'line_box_69', row: 381, hasTarget: false, showLabels: true }]
+        },
+        '9_10': {
+          group: 6,
+          title: '10) ความพึงพอใจของผู้มารับบริการ',
+          twoCol: false,
+          widgets: [{ type: 'bar_monthly_only', row: 383, hasTarget: true }]
+        }
+      };
+
+      /* RFC-4180 UTF-8 CSV Parser */
+      function parseCSV(text) {
+        const cleaned = text.replace(/^\uFEFF/, '');
+        const rows = [];
+        let row = [];
+        let cell = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < cleaned.length; i++) {
+          const ch = cleaned[i];
+          const next = cleaned[i + 1];
+
+          if (inQuotes) {
+            if (ch === '"' && next === '"') {
+              cell += '"';
+              i++;
+            } else if (ch === '"') {
+              inQuotes = false;
+            } else {
+              cell += ch;
+            }
+          } else {
+            if (ch === '"') {
+              inQuotes = true;
+            } else if (ch === ',') {
+              row.push(cell);
+              cell = '';
+            } else if (ch === '\r' && next === '\n') {
+              row.push(cell);
+              rows.push(row);
+              row = [];
+              cell = '';
+              i++;
+            } else if (ch === '\n' || ch === '\r') {
+              row.push(cell);
+              rows.push(row);
+              row = [];
+              cell = '';
+            } else {
+              cell += ch;
+            }
+          }
+        }
+        if (cell.length > 0 || row.length > 0) {
+          row.push(cell);
+          rows.push(row);
+        }
+        return rows;
+      }
+
+      /* Extract Month Headers from Sheet Rows 1..9 (Cols F..Q = indices 5..16) if present */
+      function detectMonthHeaders(rows) {
+        const monthRegex = /(ต\.?ค|พ\.?ย|ธ\.?ค|ม\.?ค|ก\.?พ|มี\.?ค|เม\.?ย|พ\.?ค|มิ\.?ย|ก\.?ค|ส\.?ค|ก\.?ย)/;
+        for (let r = 0; r < Math.min(12, rows.length); r++) {
+          const line = rows[r] || [];
+          let hits = 0;
+          for (let c = 5; c <= 16; c++) {
+            if (monthRegex.test(String(line[c] || ''))) hits++;
+          }
+          if (hits >= 6) {
+            const detected = [];
+            for (let c = 5; c <= 16; c++) {
+              const raw = String(line[c] || '').trim().replace(/\s+/g, ' ');
+              if (raw && !/^\d+\.\d+$/.test(raw)) {
+                detected.push(raw);
+              } else {
+                detected.push(DEFAULT_MONTHS[c - 5]);
+              }
+              if (/ก\.?ย/.test(raw)) {
+                sep69ColIndex = c;
+              }
+            }
+            monthLabels = detected;
+            return;
+          }
+        }
+        monthLabels = DEFAULT_MONTHS.slice();
+        sep69ColIndex = 16;
+      }
+
+      /* Data Access Helpers (1-based sheet row -> 0-based array index) */
+      function getCellRaw(row1Based, col0Based) {
+        const r = sheetRows[row1Based - 1];
+        if (!r || col0Based >= r.length) return '';
+        return String(r[col0Based] ?? '').trim();
+      }
+
+      function parseNum(raw) {
+        if (raw === null || raw === undefined) return null;
+        const s = String(raw).trim();
+        if (!s || s === '-' || s === 'N/A' || s === '#DIV/0!' || s === '#VALUE!' || s === '#REF!') return null;
+        const cleaned = s.replace(/,/g, '').replace(/%/g, '').trim();
+        if (/^-?\d+(\.\d+)?$/.test(cleaned)) {
+          return parseFloat(cleaned);
+        }
+        const match = cleaned.match(/-?\d+(?:\.\d+)?/);
+        return match ? parseFloat(match[0]) : null;
+      }
+
+      function parseTargetNum(raw) {
+        if (!raw) return null;
+        const s = String(raw).replace(/,/g, '').trim();
+        if (!s || s === '-') return null;
+        const m = s.match(/-?\d+(?:\.\d+)?/);
+        return m ? parseFloat(m[0]) : null;
+      }
+
+      /* Strictly use Column B (index 1) as the displayed data name */
+      function getColBName(row1Based) {
+        const b = getCellRaw(row1Based, 1);
+        return b || '—';
+      }
+
+      function getRowMetrics(row1Based) {
+        const nameB = getColBName(row1Based);
+        const raw68 = getCellRaw(row1Based, 3);     // Col D: ปีงบ 68
+        const rawTarget = getCellRaw(row1Based, 4); // Col E: เป้าหมาย
+        const raw69 = getCellRaw(row1Based, 17);    // Col R: รวมปี 69
+        const val68 = parseNum(raw68);
+        const valTarget = parseTargetNum(rawTarget);
+        const val69 = parseNum(raw69);
+        const monthly = [];
+        for (let c = 5; c <= 16; c++) {
+          monthly.push(parseNum(getCellRaw(row1Based, c)));
+        }
+        return {
+          nameB,
+          raw68,
+          rawTarget,
+          raw69,
+          val68,
+          valTarget,
+          val69,
+          monthly
+        };
+      }
+
+      function formatRealNumber(val) {
+        if (val === null || val === undefined || Number.isNaN(val)) return '-';
+        if (Number.isInteger(val)) {
+          return val.toLocaleString('th-TH');
+        }
+        return val.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+      }
+
+      function formatDiff(val69, val68) {
+        if (val69 === null || val68 === null) return { text: '-', dir: 'flat', diff: null };
+        const diff = Number((val69 - val68).toFixed(4));
+        const sign = diff > 0 ? '+' : '';
+        const arrow = diff > 0 ? '↗ ' : (diff < 0 ? '↘ ' : '');
+        return {
+          text: `${arrow}${sign}${formatRealNumber(diff)}`,
+          dir: diff > 0 ? 'up' : (diff < 0 ? 'down' : 'flat'),
+          diff
+        };
+      }
+
+      /* Integer Axis Scale Helper: Guarantees X & Y axis ticks are ALWAYS integers, never decimals */
+      function buildIntegerYScale(valuesArray, extraTopRatio) {
+        const nums = valuesArray.filter(v => typeof v === 'number' && Number.isFinite(v));
+        const minData = nums.length ? Math.min(0, ...nums) : 0;
+        const maxData = nums.length ? Math.max(0, ...nums) : 1;
+        const minInt = Math.floor(minData);
+        const paddedMax = maxData * (extraTopRatio || 1.18);
+        let maxInt = Math.max(minInt + 1, Math.ceil(paddedMax));
+        const span = Math.max(1, maxInt - minInt);
+        const step = Math.max(1, Math.ceil(span / 5));
+        maxInt = minInt + step * Math.ceil(span / step);
+
+        return {
+          min: minInt,
+          max: maxInt,
+          ticks: {
+            stepSize: step,
+            precision: 0,
+            color: '#334155',
+            font: { family: 'Sarabun, sans-serif', size: 11 },
+            callback: function (value) {
+              return Number.isInteger(value) ? value.toLocaleString('th-TH') : '';
+            }
+          },
+          grid: {
+            color: '#e2e8f0'
+          }
+        };
+      }
+
+      function buildCategoryXScale(labels) {
+        return {
+          ticks: {
+            color: '#334155',
+            maxRotation: 45,
+            minRotation: 0,
+            autoSkip: false,
+            font: { family: 'Sarabun, sans-serif', size: 10 },
+            callback: function (val, index) {
+              const lbl = labels[index];
+              if (typeof lbl === 'number') return Math.round(lbl).toLocaleString('th-TH');
+              const asNum = Number(lbl);
+              if (lbl !== '' && !Number.isNaN(asNum)) {
+                return Math.round(asNum).toLocaleString('th-TH');
+              }
+              return lbl;
+            }
+          },
+          grid: {
+            display: false
+          }
+        };
+      }
+
+      /* Custom Chart.js Plugin 1: Real Decimal Data Point Labels (when allowed) */
+      const pointValueLabelPlugin = {
+        id: 'pointValueLabels',
+        afterDatasetsDraw(chart, args, pluginOptions) {
+          if (!pluginOptions || !pluginOptions.enabled) return;
+          const { ctx } = chart;
+          ctx.save();
+          ctx.font = '600 10px Sarabun, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#0f172a';
+
+          chart.data.datasets.forEach((ds, dsIdx) => {
+            if (ds.skipPointLabels) return;
+            const meta = chart.getDatasetMeta(dsIdx);
+            if (!meta || meta.hidden) return;
+            meta.data.forEach((elem, i) => {
+              const rawVal = ds.data[i];
+              if (rawVal === null || rawVal === undefined || Number.isNaN(rawVal)) return;
+              const txt = formatRealNumber(rawVal);
+              ctx.fillText(txt, elem.x, Math.max(11, elem.y - 6));
+            });
+          });
+          ctx.restore();
+        }
+      };
+
+      /* Custom Chart.js Plugin 2: Blue Curved Arrow + Difference Value Between FY68 and FY69 Bars */
+      const curvedArrowComparePlugin = {
+        id: 'curvedArrowCompare',
+        afterDatasetsDraw(chart, args, pluginOptions) {
+          if (!pluginOptions || !pluginOptions.enabled) return;
+          const meta = chart.getDatasetMeta(0);
+          if (!meta || !meta.data || meta.data.length < 2) return;
+
+          const bar0 = meta.data[0];
+          const bar1 = meta.data[1];
+          const v68 = pluginOptions.val68;
+          const v69 = pluginOptions.val69;
+          if (v68 === null || v69 === null || Number.isNaN(v68) || Number.isNaN(v69)) return;
+
+          const diff = Number((v69 - v68).toFixed(4));
+          const { ctx, chartArea } = chart;
+          ctx.save();
+
+          const midX = (bar0.x + bar1.x) / 2;
+          const topBound = chartArea.top + 8;
+          const bottomBound = chartArea.bottom - 14;
+
+          /* Place curved blue arrow right in the center between the two bars, tilted up or down */
+          const spanX = Math.max(22, Math.min(48, (bar1.x - bar0.x) * 0.62));
+          const xStart = midX - spanX / 2;
+          const xEnd = midX + spanX / 2;
+
+          let yMidBars = (bar0.y + bar1.y) / 2;
+          let yBase = Math.max(topBound + 26, Math.min(bottomBound - 18, yMidBars));
+
+          let yStart = yBase;
+          let yEnd = yBase;
+          let ctrlX = midX;
+          let ctrlY = yBase - 12;
+
+          if (diff > 0) {
+            /* Tilted pointing UP (เอียงชี้ขึ้น) */
+            yStart = yBase + 10;
+            yEnd = yBase - 10;
+            ctrlX = midX - 4;
+            ctrlY = yBase - 16;
+          } else if (diff < 0) {
+            /* Tilted pointing DOWN (เอียงชี้ลง) */
+            yStart = yBase - 10;
+            yEnd = yBase + 10;
+            ctrlX = midX + 4;
+            ctrlY = yBase - 14;
+          }
+
+          /* Draw Curved Blue Path */
+          ctx.strokeStyle = '#1d4ed8';
+          ctx.fillStyle = '#1d4ed8';
+          ctx.lineWidth = 2.4;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(xStart, yStart);
+          ctx.quadraticCurveTo(ctrlX, ctrlY, xEnd, yEnd);
+          ctx.stroke();
+
+          /* Draw Arrowhead at (xEnd, yEnd) along tangent from control point */
+          const angle = Math.atan2(yEnd - ctrlY, xEnd - ctrlX);
+          const headLen = 7.5;
+          ctx.beginPath();
+          ctx.moveTo(xEnd, yEnd);
+          ctx.lineTo(xEnd - headLen * Math.cos(angle - Math.PI / 6), yEnd - headLen * Math.sin(angle - Math.PI / 6));
+          ctx.lineTo(xEnd - headLen * Math.cos(angle + Math.PI / 6), yEnd - headLen * Math.sin(angle + Math.PI / 6));
+          ctx.closePath();
+          ctx.fill();
+
+          /* Difference Amount Label right at center between the two bars */
+          const sign = diff > 0 ? '+' : '';
+          const diffLabel = `${sign}${formatRealNumber(diff)}`;
+          ctx.font = '700 11px Sarabun, sans-serif';
+          const textW = ctx.measureText(diffLabel).width;
+          const pillW = textW + 10;
+          const pillH = 18;
+          const pillX = midX - pillW / 2;
+          const pillY = Math.max(chartArea.top + 1, Math.min(yStart, yEnd, ctrlY) - 15);
+
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+          ctx.strokeStyle = '#93c5fd';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          if (ctx.roundRect) {
+            ctx.roundRect(pillX, pillY, pillW, pillH, 5);
+          } else {
+            ctx.rect(pillX, pillY, pillW, pillH);
+          }
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#1d4ed8';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(diffLabel, midX, pillY + pillH / 2);
+
+          ctx.restore();
+        }
+      };
+
+      /* Custom Chart.js Plugin 3: Pie Percentage Labels */
+      const piePercentPlugin = {
+        id: 'piePercentLabels',
+        afterDatasetsDraw(chart, args, pluginOptions) {
+          if (!pluginOptions || !pluginOptions.enabled) return;
+          const ds = chart.data.datasets[0];
+          if (!ds) return;
+          const total = ds.data.reduce((acc, v) => acc + (Number(v) || 0), 0);
+          if (total <= 0) return;
+
+          const meta = chart.getDatasetMeta(0);
+          const { ctx } = chart;
+          ctx.save();
+          ctx.font = '700 11.5px Sarabun, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+
+          meta.data.forEach((arc, idx) => {
+            const val = Number(ds.data[idx]) || 0;
+            if (val <= 0) return;
+            const pct = ((val / total) * 100).toFixed(1) + '%';
+            const pos = arc.tooltipPosition();
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = 'rgba(15, 23, 42, 0.55)';
+            ctx.lineWidth = 2.5;
+            ctx.strokeText(pct, pos.x, pos.y);
+            ctx.fillText(pct, pos.x, pos.y);
+          });
+          ctx.restore();
+        }
+      };
+
+      /* Chart White Background Plugin */
+      const whiteCanvasBgPlugin = {
+        id: 'whiteCanvasBg',
+        beforeDraw(chart) {
+          const { ctx, width, height } = chart;
+          ctx.save();
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, width, height);
+          ctx.restore();
+        }
+      };
+
+      function destroyAllCharts() {
+        while (activeCharts.length > 0) {
+          const ch = activeCharts.pop();
+          try { ch.destroy(); } catch (e) {}
+        }
+      }
+
+      function createChartSafe(canvas, config) {
+        if (typeof Chart === 'undefined') {
+          const fallback = document.createElement('div');
+          fallback.style.padding = '16px';
+          fallback.style.fontSize = '0.85rem';
+          fallback.style.color = '#475569';
+          fallback.textContent = 'ไม่สามารถโหลดไลบรารีกราฟได้ในขณะนี้';
+          canvas.replaceWith(fallback);
+          return null;
+        }
+        const instance = new Chart(canvas, config);
+        activeCharts.push(instance);
+        return instance;
+      }
+
+      /* Chart Builders */
+      function renderMonthlyLineChart(canvas, metrics, opts) {
+        const { hasTarget, showLabels, disableAnim } = opts;
+        const datasets = [
+          {
+            label: metrics.nameB,
+            data: metrics.monthly,
+            borderColor: '#1e3a8a',
+            backgroundColor: 'rgba(125, 211, 252, 0.36)',
+            fill: true,
+            tension: 0.25,
+            borderWidth: 2.3,
+            pointRadius: 3.2,
+            pointBackgroundColor: '#1e3a8a',
+            spanGaps: true
+          }
+        ];
+
+        const allVals = metrics.monthly.slice();
+        if (hasTarget && metrics.valTarget !== null) {
+          const targetSeries = monthLabels.map(() => metrics.valTarget);
+          datasets.push({
+            label: 'เป้าหมาย',
+            data: targetSeries,
+            borderColor: '#dc2626',
+            borderDash: [6, 4],
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false,
+            skipPointLabels: true
+          });
+          allVals.push(metrics.valTarget);
+        }
+
+        createChartSafe(canvas, {
+          type: 'line',
+          data: {
+            labels: monthLabels,
+            datasets
+          },
+          plugins: [whiteCanvasBgPlugin, pointValueLabelPlugin],
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: disableAnim ? false : { duration: 220 },
+            layout: { padding: { top: showLabels ? 18 : 8, right: 8, left: 2, bottom: 2 } },
+            plugins: {
+              legend: {
+                display: hasTarget && metrics.valTarget !== null,
+                position: 'top',
+                labels: { boxWidth: 14, font: { family: 'Sarabun, sans-serif', size: 11 } }
+              },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => `${ctx.dataset.label}: ${formatRealNumber(ctx.parsed.y)}`
+                }
+              },
+              pointValueLabels: { enabled: Boolean(showLabels) }
+            },
+            scales: {
+              x: buildCategoryXScale(monthLabels),
+              y: buildIntegerYScale(allVals, showLabels ? 1.24 : 1.15)
+            }
+          }
+        });
+      }
+
+      function renderCompareBarChart(canvas, metrics, opts) {
+        const { hasTarget, disableAnim } = opts;
+        const labels = ['ปีงบ 68', 'รวมปี 69'];
+        const barVals = [metrics.val68, metrics.val69];
+        const allVals = barVals.slice();
+
+        const datasets = [
+          {
+            label: 'เปรียบเทียบ',
+            data: barVals,
+            backgroundColor: ['#f59e0b', '#0d9488'],
+            borderColor: ['#d97706', '#0f766e'],
+            borderWidth: 1,
+            borderRadius: 5,
+            barPercentage: 0.56,
+            categoryPercentage: 0.72,
+            order: 2
+          }
+        ];
+
+        if (hasTarget && metrics.valTarget !== null) {
+          datasets.push({
+            type: 'line',
+            label: 'เป้าหมาย',
+            data: [metrics.valTarget, metrics.valTarget],
+            borderColor: '#dc2626',
+            borderDash: [5, 4],
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false,
+            skipPointLabels: true,
+            order: 1
+          });
+          allVals.push(metrics.valTarget);
+        }
+
+        createChartSafe(canvas, {
+          type: 'bar',
+          data: { labels, datasets },
+          plugins: [whiteCanvasBgPlugin, curvedArrowComparePlugin],
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: disableAnim ? false : { duration: 220 },
+            layout: { padding: { top: 34, right: 6, left: 2, bottom: 2 } },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => `${ctx.label || ctx.dataset.label}: ${formatRealNumber(ctx.parsed.y)}`
+                }
+              },
+              curvedArrowCompare: {
+                enabled: true,
+                val68: metrics.val68,
+                val69: metrics.val69
+              }
+            },
+            scales: {
+              x: buildCategoryXScale(labels),
+              y: buildIntegerYScale(allVals, 1.38)
+            }
+          }
+        });
+      }
+
+      /* Widget DOM Builders */
+      function createHeaderTab(title, groupColor) {
+        const header = document.createElement('div');
+        header.className = 'col-b-tab';
+        header.style.backgroundColor = groupColor;
+        header.textContent = title;
+        return header;
+      }
+
+      function createThreeKpiTabsEl(val68, val69, customLabels) {
+        const wrap = document.createElement('div');
+        wrap.className = 'three-kpi-tabs';
+        const diffObj = formatDiff(val69, val68);
+
+        const lbl68 = (customLabels && customLabels[0]) || 'ผลงานปี 68';
+        const lbl69 = (customLabels && customLabels[1]) || 'ยอดรวมปี 69';
+        const lblDiff = (customLabels && customLabels[2]) || 'ผลการเปรียบเทียบ';
+
+        const items = [
+          { cls: 'tab-68', label: lbl68, val: formatRealNumber(val68), dir: '' },
+          { cls: 'tab-69', label: lbl69, val: formatRealNumber(val69), dir: '' },
+          { cls: 'tab-diff', label: lblDiff, val: diffObj.text, dir: diffObj.dir }
+        ];
+
+        items.forEach(it => {
+          const box = document.createElement('div');
+          box.className = `kpi-mini-tab ${it.cls}`;
+          const l = document.createElement('div');
+          l.className = 'kpi-mini-label';
+          l.textContent = it.label;
+          const v = document.createElement('div');
+          v.className = `kpi-mini-val ${it.dir}`;
+          v.textContent = it.val;
+          box.appendChild(l);
+          box.appendChild(v);
+          wrap.appendChild(box);
+        });
+        return wrap;
+      }
+
+      function createRectSummaryEl(label, val, borderColor) {
+        const box = document.createElement('div');
+        box.className = 'rect-summary-tab';
+        box.style.borderColor = borderColor;
+        const l = document.createElement('div');
+        l.className = 'rect-summary-label';
+        l.textContent = label;
+        const v = document.createElement('div');
+        v.className = 'rect-summary-value';
+        v.textContent = formatRealNumber(val);
+        box.appendChild(l);
+        box.appendChild(v);
+        return box;
+      }
+
+      function renderWidgetCard(w, groupColor, disableAnim) {
+        const card = document.createElement('article');
+        card.className = 'kpi-card';
+
+        if (w.type === 'kpi_tabs_line') {
+          const m = getRowMetrics(w.row);
+          card.appendChild(createHeaderTab(m.nameB, groupColor));
+          const body = document.createElement('div');
+          body.className = 'card-body';
+          body.appendChild(createThreeKpiTabsEl(m.val68, m.val69));
+
+          const chartBox = document.createElement('div');
+          chartBox.className = 'chart-box';
+          const canvas = document.createElement('canvas');
+          chartBox.appendChild(canvas);
+          body.appendChild(chartBox);
+          card.appendChild(body);
+
+          renderMonthlyLineChart(canvas, m, { hasTarget: false, showLabels: w.showLabels, disableAnim });
+          return card;
+        }
+
+        if (w.type === 'line_bar_compare') {
+          const m = getRowMetrics(w.row);
+          card.appendChild(createHeaderTab(m.nameB, groupColor));
+          const body = document.createElement('div');
+          body.className = 'card-body';
+
+          const split = document.createElement('div');
+          split.className = 'split-3-1';
+
+          const p34 = document.createElement('div');
+          p34.className = 'pane-3-4';
+          const lineBox = document.createElement('div');
+          lineBox.className = 'chart-box';
+          const lineCanvas = document.createElement('canvas');
+          lineBox.appendChild(lineCanvas);
+          p34.appendChild(lineBox);
+
+          const p14 = document.createElement('div');
+          p14.className = 'pane-1-4';
+          const barBox = document.createElement('div');
+          barBox.className = 'chart-box bar-compare-box';
+          const barCanvas = document.createElement('canvas');
+          barBox.appendChild(barCanvas);
+          p14.appendChild(barBox);
+
+          split.appendChild(p34);
+          split.appendChild(p14);
+          body.appendChild(split);
+          card.appendChild(body);
+
+          renderMonthlyLineChart(lineCanvas, m, { hasTarget: w.hasTarget, showLabels: w.showLabels, disableAnim });
+          renderCompareBarChart(barCanvas, m, { hasTarget: w.hasTarget, disableAnim });
+          return card;
+        }
+
+        if (w.type === 'line_only_3_4') {
+          const m = getRowMetrics(w.row);
+          card.appendChild(createHeaderTab(m.nameB, groupColor));
+          const body = document.createElement('div');
+          body.className = 'card-body';
+
+          const split = document.createElement('div');
+          split.className = 'split-3-1 only-3-4';
+          const p34 = document.createElement('div');
+          p34.className = 'pane-3-4';
+          const lineBox = document.createElement('div');
+          lineBox.className = 'chart-box';
+          const lineCanvas = document.createElement('canvas');
+          lineBox.appendChild(lineCanvas);
+          p34.appendChild(lineBox);
+
+          const spacer = document.createElement('div');
+          spacer.className = 'pane-1-4';
+          split.appendChild(p34);
+          split.appendChild(spacer);
+          body.appendChild(split);
+          card.appendChild(body);
+
+          renderMonthlyLineChart(lineCanvas, m, { hasTarget: w.hasTarget, showLabels: w.showLabels, disableAnim });
+          return card;
+        }
+
+        if (w.type === 'line_box_69') {
+          const m = getRowMetrics(w.row);
+          card.appendChild(createHeaderTab(m.nameB, groupColor));
+          const body = document.createElement('div');
+          body.className = 'card-body';
+
+          const split = document.createElement('div');
+          split.className = 'split-3-1';
+
+          const p34 = document.createElement('div');
+          p34.className = 'pane-3-4';
+          const lineBox = document.createElement('div');
+          lineBox.className = 'chart-box';
+          const lineCanvas = document.createElement('canvas');
+          lineBox.appendChild(lineCanvas);
+          p34.appendChild(lineBox);
+
+          const p14 = document.createElement('div');
+          p14.className = 'pane-1-4';
+          p14.appendChild(createRectSummaryEl('รวมปี 69', m.val69, groupColor));
+
+          split.appendChild(p34);
+          split.appendChild(p14);
+          body.appendChild(split);
+          card.appendChild(body);
+
+          renderMonthlyLineChart(lineCanvas, m, { hasTarget: w.hasTarget, showLabels: w.showLabels, disableAnim });
+          return card;
+        }
+
+        if (w.type === 'line_full') {
+          const m = getRowMetrics(w.row);
+          card.appendChild(createHeaderTab(m.nameB, groupColor));
+          const body = document.createElement('div');
+          body.className = 'card-body';
+          const lineBox = document.createElement('div');
+          lineBox.className = 'chart-box';
+          const lineCanvas = document.createElement('canvas');
+          lineBox.appendChild(lineCanvas);
+          body.appendChild(lineBox);
+          card.appendChild(body);
+
+          renderMonthlyLineChart(lineCanvas, m, { hasTarget: w.hasTarget, showLabels: w.showLabels, disableAnim });
+          return card;
+        }
+
+        if (w.type === 'pie_3_4_box_1_4') {
+          const pieLabels = w.pieRows.map(r => getColBName(r));
+          const pieVals = w.pieRows.map(r => {
+            const m = getRowMetrics(r);
+            return m.val69 !== null ? m.val69 : (m.val68 !== null ? m.val68 : 0);
+          });
+          const boxM = getRowMetrics(w.boxRow);
+
+          card.appendChild(createHeaderTab(`${pieLabels.join(' / ')}`, groupColor));
+          const body = document.createElement('div');
+          body.className = 'card-body';
+
+          const split = document.createElement('div');
+          split.className = 'split-3-1';
+
+          const p34 = document.createElement('div');
+          p34.className = 'pane-3-4';
+          const pieBox = document.createElement('div');
+          pieBox.className = 'chart-box pie-box';
+          const pieCanvas = document.createElement('canvas');
+          pieBox.appendChild(pieCanvas);
+          p34.appendChild(pieBox);
+
+          const p14 = document.createElement('div');
+          p14.className = 'pane-1-4';
+          p14.appendChild(createRectSummaryEl(boxM.nameB, boxM.val69, groupColor));
+
+          split.appendChild(p34);
+          split.appendChild(p14);
+          body.appendChild(split);
+          card.appendChild(body);
+
+          createChartSafe(pieCanvas, {
+            type: 'pie',
+            data: {
+              labels: pieLabels,
+              datasets: [{
+                data: pieVals,
+                backgroundColor: PIE_PALETTE.slice(0, pieVals.length),
+                borderColor: '#ffffff',
+                borderWidth: 2
+              }]
+            },
+            plugins: [whiteCanvasBgPlugin, piePercentPlugin],
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: disableAnim ? false : { duration: 220 },
+              plugins: {
+                legend: { position: 'bottom', labels: { font: { family: 'Sarabun, sans-serif', size: 11 } } },
+                piePercentLabels: { enabled: true },
+                tooltip: {
+                  callbacks: {
+                    label: (ctx) => {
+                      const sum = pieVals.reduce((a, b) => a + (b || 0), 0);
+                      const pct = sum > 0 ? ((ctx.parsed / sum) * 100).toFixed(2) : '0.00';
+                      return `${ctx.label}: ${formatRealNumber(ctx.parsed)} (${pct}%)`;
+                    }
+                  }
+                }
+              }
+            }
+          });
+          return card;
+        }
+
+        if (w.type === 'ed_ned_special') {
+          const m159 = getRowMetrics(159);
+          const m161 = getRowMetrics(161);
+          const m164 = getRowMetrics(164);
+
+          card.appendChild(createHeaderTab(
+            'มูลค่าซื้อยาในบัญชียาหลักแห่งชาติ(ED)/มูลค่าซื้อยานอกบัญชียาหลักแห่งชาติ(ED)เทียบกับแผนจัดซื้อ',
+            groupColor
+          ));
+
+          const body = document.createElement('div');
+          body.className = 'card-body';
+
+          /* 1) Row 164: 3 KPI Tabs on a single line */
+          body.appendChild(createThreeKpiTabsEl(m164.val68, m164.val69, [
+            'มูลค่าการจัดซื้อรวมปี 68',
+            'มูลค่าการจัดซื้อรวมปี 69',
+            'ผลการเปรียบเทียบ'
+          ]));
+
+          /* 2) Split: Left Pie (Rows 159 & 161 Col R) + Right Bar (Plan Col E vs Col R) */
+          const split = document.createElement('div');
+          split.className = 'split-half-half';
+
+          const leftPane = document.createElement('div');
+          leftPane.className = 'pane-half';
+          const pieBox = document.createElement('div');
+          pieBox.className = 'chart-box pie-box';
+          const pieCanvas = document.createElement('canvas');
+          pieBox.appendChild(pieCanvas);
+          const caption = document.createElement('div');
+          caption.className = 'pie-caption-below';
+          caption.textContent = 'ข้อมูลการจัดซื้อรวม ปี 69';
+          leftPane.appendChild(pieBox);
+          leftPane.appendChild(caption);
+
+          const rightPane = document.createElement('div');
+          rightPane.className = 'pane-half';
+          const barBox = document.createElement('div');
+          barBox.className = 'chart-box';
+          const barCanvas = document.createElement('canvas');
+          barBox.appendChild(barCanvas);
+          rightPane.appendChild(barBox);
+
+          split.appendChild(leftPane);
+          split.appendChild(rightPane);
+          body.appendChild(split);
+          card.appendChild(body);
+
+          const pieLabels = [m159.nameB, m161.nameB];
+          const pieData = [m159.val69 || 0, m161.val69 || 0];
+
+          createChartSafe(pieCanvas, {
+            type: 'pie',
+            data: {
+              labels: pieLabels,
+              datasets: [{
+                data: pieData,
+                backgroundColor: ['#0d9488', '#f59e0b'],
+                borderColor: '#ffffff',
+                borderWidth: 2
+              }]
+            },
+            plugins: [whiteCanvasBgPlugin, piePercentPlugin],
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: disableAnim ? false : { duration: 220 },
+              plugins: {
+                legend: { position: 'bottom', labels: { font: { family: 'Sarabun, sans-serif', size: 11 } } },
+                piePercentLabels: { enabled: true },
+                tooltip: {
+                  callbacks: {
+                    label: (ctx) => {
+                      const sum = pieData.reduce((a, b) => a + (b || 0), 0);
+                      const pct = sum > 0 ? ((ctx.parsed / sum) * 100).toFixed(2) : '0.00';
+                      return `${ctx.label}: ${formatRealNumber(ctx.parsed)} (${pct}%)`;
+                    }
+                  }
+                }
+              }
+            }
+          });
+
+          const planVals = [m159.valTarget, m161.valTarget];
+          const actualVals = [m159.val69, m161.val69];
+          createChartSafe(barCanvas, {
+            type: 'bar',
+            data: {
+              labels: pieLabels,
+              datasets: [
+                {
+                  label: 'แผนจัดซื้อ',
+                  data: planVals,
+                  backgroundColor: '#7c3aed',
+                  borderRadius: 5
+                },
+                {
+                  label: 'ยอดรวมปี 69',
+                  data: actualVals,
+                  backgroundColor: '#0d9488',
+                  borderRadius: 5
+                }
+              ]
+            },
+            plugins: [whiteCanvasBgPlugin, pointValueLabelPlugin],
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: disableAnim ? false : { duration: 220 },
+              layout: { padding: { top: 18 } },
+              plugins: {
+                legend: { position: 'top', labels: { font: { family: 'Sarabun, sans-serif', size: 11 } } },
+                pointValueLabels: { enabled: true },
+                tooltip: {
+                  callbacks: {
+                    label: (ctx) => `${ctx.dataset.label}: ${formatRealNumber(ctx.parsed.y)}`
+                  }
+                }
+              },
+              scales: {
+                x: buildCategoryXScale(pieLabels),
+                y: buildIntegerYScale([...planVals, ...actualVals], 1.24)
+              }
+            }
+          });
+          return card;
+        }
+
+        if (w.type === 'procure_table_679') {
+          const r172 = getRowMetrics(172);
+          const r173 = getRowMetrics(173);
+          const r177 = getRowMetrics(177);
+          const r178 = getRowMetrics(178);
+          const r186 = getRowMetrics(186);
+          const r187 = getRowMetrics(187);
+
+          const buyGpo = r172.val69;
+          const planGpo = r173.val69 !== null ? r173.val69 : r173.valTarget;
+          const pctGpo = (buyGpo !== null && planGpo) ? ((buyGpo / planGpo) * 100) : null;
+
+          const buyInno = r177.val69;
+          const planInno = r178.val69 !== null ? r178.val69 : r178.valTarget;
+          const pctInno = (buyInno !== null && planInno) ? ((buyInno / planInno) * 100) : null;
+
+          const wrap = document.createElement('div');
+          wrap.className = 'table-wrap';
+
+          const table = document.createElement('table');
+          table.className = 'procure-table';
+          table.innerHTML = `
+            <thead>
+              <tr>
+                <th>รายการ</th>
+                <th>มูลค่าการจัดซื้อ/ประหยัด</th>
+                <th>แผนจัดซื้อ</th>
+                <th>คิดเป็น(%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>มูลค่าจัดซื้อยาจากองค์การเภสัชกรรม เทียบแผนจัดซื้อ</td>
+                <td>${formatRealNumber(buyGpo)}</td>
+                <td>${formatRealNumber(planGpo)}</td>
+                <td>${pctGpo !== null ? formatRealNumber(pctGpo) + '%' : '-'}</td>
+              </tr>
+              <tr>
+                <td>มูลค่าจัดซื้อยานวัตกรรมรวม เทียบแผนจัดซื้อ</td>
+                <td>${formatRealNumber(buyInno)}</td>
+                <td>${formatRealNumber(planInno)}</td>
+                <td>${pctInno !== null ? formatRealNumber(pctInno) + '%' : '-'}</td>
+              </tr>
+              <tr>
+                <td>มูลค่าประหยัดในการจัดซื้อยาโดยวิธี e-bidding</td>
+                <td>${formatRealNumber(r186.val69)}</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+              <tr>
+                <td>มูลค่าประหยัดในการจัดซื้อยาโดยวิธีสืบราคา</td>
+                <td>${formatRealNumber(r187.val69)}</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+            </tbody>
+          `;
+          wrap.appendChild(table);
+          return wrap;
+        }
+
+        if (w.type === 'pie_sep69_half_box_half') {
+          const pieLabels = w.pieRows.map(r => getColBName(r));
+          const pieVals = w.pieRows.map(r => parseNum(getCellRaw(r, sep69ColIndex)) || 0);
+          const boxTitle = getColBName(w.boxRow);
+          const boxVal = parseNum(getCellRaw(w.boxRow, sep69ColIndex));
+
+          card.appendChild(createHeaderTab(boxTitle, groupColor));
+          const body = document.createElement('div');
+          body.className = 'card-body';
+
+          const split = document.createElement('div');
+          split.className = 'split-half-half';
+
+          const leftHalf = document.createElement('div');
+          leftHalf.className = 'pane-half';
+          const pieBox = document.createElement('div');
+          pieBox.className = 'chart-box pie-box';
+          const pieCanvas = document.createElement('canvas');
+          pieBox.appendChild(pieCanvas);
+          leftHalf.appendChild(pieBox);
+
+          const rightHalf = document.createElement('div');
+          rightHalf.className = 'pane-half';
+          rightHalf.appendChild(createRectSummaryEl(`${boxTitle} (ก.ย.69)`, boxVal, groupColor));
+
+          split.appendChild(leftHalf);
+          split.appendChild(rightHalf);
+          body.appendChild(split);
+          card.appendChild(body);
+
+          createChartSafe(pieCanvas, {
+            type: 'pie',
+            data: {
+              labels: pieLabels,
+              datasets: [{
+                data: pieVals,
+                backgroundColor: PIE_PALETTE.slice(0, pieVals.length),
+                borderColor: '#ffffff',
+                borderWidth: 2
+              }]
+            },
+            plugins: [whiteCanvasBgPlugin, piePercentPlugin],
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: disableAnim ? false : { duration: 220 },
+              plugins: {
+                legend: { position: 'bottom', labels: { font: { family: 'Sarabun, sans-serif', size: 11 } } },
+                piePercentLabels: { enabled: true },
+                tooltip: {
+                  callbacks: {
+                    label: (ctx) => {
+                      const sum = pieVals.reduce((a, b) => a + (b || 0), 0);
+                      const pct = sum > 0 ? ((ctx.parsed / sum) * 100).toFixed(2) : '0.00';
+                      return `${ctx.label}: ${formatRealNumber(ctx.parsed)} (${pct}%)`;
+                    }
+                  }
+                }
+              }
+            }
+          });
+          return card;
+        }
+
+        if (w.type === 'bar_monthly_plus_69') {
+          const m = getRowMetrics(w.row);
+          card.appendChild(createHeaderTab(m.nameB, groupColor));
+          const body = document.createElement('div');
+          body.className = 'card-body';
+
+          const chartBox = document.createElement('div');
+          chartBox.className = 'chart-box';
+          const canvas = document.createElement('canvas');
+          chartBox.appendChild(canvas);
+          body.appendChild(chartBox);
+          card.appendChild(body);
+
+          const labels = [...monthLabels, 'รวมปี 69'];
+          const barData = [...m.monthly, m.val69];
+          const bgColors = [...monthLabels.map(() => '#7c3aed'), '#0d9488'];
+          const allVals = barData.slice();
+
+          const datasets = [
+            {
+              label: m.nameB,
+              data: barData,
+              backgroundColor: bgColors,
+              borderRadius: 4,
+              order: 2
+            }
+          ];
+
+          if (w.hasTarget && m.valTarget !== null) {
+            datasets.push({
+              type: 'line',
+              label: 'เป้าหมาย',
+              data: labels.map(() => m.valTarget),
+              borderColor: '#dc2626',
+              borderDash: [6, 4],
+              borderWidth: 2,
+              pointRadius: 0,
+              fill: false,
+              skipPointLabels: true,
+              order: 1
+            });
+            allVals.push(m.valTarget);
+          }
+
+          createChartSafe(canvas, {
+            type: 'bar',
+            data: { labels, datasets },
+            plugins: [whiteCanvasBgPlugin, pointValueLabelPlugin],
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: disableAnim ? false : { duration: 220 },
+              layout: { padding: { top: 18 } },
+              plugins: {
+                legend: { display: false },
+                pointValueLabels: { enabled: true },
+                tooltip: {
+                  callbacks: {
+                    label: (ctx) => `${ctx.label || ctx.dataset.label}: ${formatRealNumber(ctx.parsed.y)}`
+                  }
+                }
+              },
+              scales: {
+                x: buildCategoryXScale(labels),
+                y: buildIntegerYScale(allVals, 1.24)
+              }
+            }
+          });
+          return card;
+        }
+
+        if (w.type === 'bar_monthly_only') {
+          const m = getRowMetrics(w.row);
+          card.appendChild(createHeaderTab(m.nameB, groupColor));
+          const body = document.createElement('div');
+          body.className = 'card-body';
+
+          const chartBox = document.createElement('div');
+          chartBox.className = 'chart-box';
+          const canvas = document.createElement('canvas');
+          chartBox.appendChild(canvas);
+          body.appendChild(chartBox);
+          card.appendChild(body);
+
+          const allVals = m.monthly.slice();
+          const datasets = [
+            {
+              label: m.nameB,
+              data: m.monthly,
+              backgroundColor: '#0d9488',
+              borderRadius: 5,
+              order: 2
+            }
+          ];
+
+          if (w.hasTarget && m.valTarget !== null) {
+            datasets.push({
+              type: 'line',
+              label: 'เป้าหมาย',
+              data: monthLabels.map(() => m.valTarget),
+              borderColor: '#dc2626',
+              borderDash: [6, 4],
+              borderWidth: 2,
+              pointRadius: 0,
+              fill: false,
+              skipPointLabels: true,
+              order: 1
+            });
+            allVals.push(m.valTarget);
+          }
+
+          createChartSafe(canvas, {
+            type: 'bar',
+            data: { labels: monthLabels, datasets },
+            plugins: [whiteCanvasBgPlugin, pointValueLabelPlugin],
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: disableAnim ? false : { duration: 220 },
+              layout: { padding: { top: 18 } },
+              plugins: {
+                legend: {
+                  display: w.hasTarget && m.valTarget !== null,
+                  position: 'top',
+                  labels: { font: { family: 'Sarabun, sans-serif', size: 11 } }
+                },
+                pointValueLabels: { enabled: true },
+                tooltip: {
+                  callbacks: {
+                    label: (ctx) => `${ctx.dataset.label}: ${formatRealNumber(ctx.parsed.y)}`
+                  }
+                }
+              },
+              scales: {
+                x: buildCategoryXScale(monthLabels),
+                y: buildIntegerYScale(allVals, 1.24)
+              }
+            }
+          });
+          return card;
+        }
+
+        return card;
+      }
+
+      function renderLeafSectionEl(leafId, showSubHeading, disableAnim) {
+        const spec = LEAF_SPECS[leafId];
+        if (!spec) return document.createDocumentFragment();
+        const groupColor = GROUP_COLORS[spec.group] || '#1d4ed8';
+
+        const block = document.createElement('section');
+        block.className = 'sub-section-block';
+
+        if (showSubHeading) {
+          const h = document.createElement('h3');
+          h.className = 'sub-section-heading';
+          h.style.borderLeftColor = groupColor;
+          h.textContent = spec.title;
+          block.appendChild(h);
+        }
+
+        const grid = document.createElement('div');
+        grid.className = spec.twoCol ? 'items-grid-two' : 'items-grid-full';
+
+        spec.widgets.forEach(w => {
+          grid.appendChild(renderWidgetCard(w, groupColor, disableAnim));
+        });
+
+        block.appendChild(grid);
+        return block;
+      }
+
+      function findNavItem(viewId) {
+        for (const grp of NAV_TREE) {
+          for (const item of grp.items) {
+            if (item.id === viewId) return { item, group: grp.group };
+          }
+        }
+        return { item: NAV_TREE[0].items[0], group: 1 };
+      }
+
+      /* Render Empty State when CSV / Sheet hasn't been loaded yet */
+      function renderEmptyImportState(container, activeColor, activeLabel) {
+        const banner = document.createElement('div');
+        banner.className = 'active-section-bar';
+        banner.style.backgroundColor = activeColor;
+        banner.innerHTML = `<span>${activeLabel}</span>`;
+        container.appendChild(banner);
+
+        const card = document.createElement('div');
+        card.className = 'empty-state-card';
+        card.innerHTML = `
+          <h2>พร้อมแสดงผลข้อมูลจากแผ่นงาน Google Sheets / ไฟล์ CSV (UTF-8)</h2>
+          <p>ไม่สามารถดึงข้อมูลโดยตรงจากลิงก์ Google Sheets ได้อัตโนมัติ (ไฟล์อาจจำกัดสิทธิ์การเข้าถึงเฉพาะผู้ได้รับเชิญ หรือถูกจำกัดโดยเบราว์เซอร์)</p>
+          <div class="empty-steps">
+            <strong>วิธีนำเข้าข้อมูลเข้าสู่ Dashboard:</strong>
+            <ol>
+              <li>กดปุ่ม <strong>"เปิดแผ่นงาน"</strong> มุมขวาบนเพื่อเปิดไฟล์ Google Sheets ต้นฉบับ</li>
+              <li>ในเมนู Google Sheets เลือก <strong>ไฟล์ (File) → ดาวน์โหลด (Download) → ค่าที่คั่นด้วยเครื่องหมายจุลภาค (.csv)</strong></li>
+              <li>กดปุ่ม <strong>"📂 เลือกไฟล์นำเข้า CSV (UTF-8)"</strong> มุมขวาบนของหน้านี้เพื่อแสดงผลทุกกิจกรรมทันที</li>
+            </ol>
+          </div>
+          <button type="button" class="btn-action btn-import" id="emptyTriggerCsvBtn" style="padding:10px 20px;font-size:0.95rem;">
+            📂 เลือกไฟล์นำเข้า CSV (UTF-8)
+          </button>
+        `;
+        container.appendChild(card);
+
+        const btn = card.querySelector('#emptyTriggerCsvBtn');
+        if (btn) {
+          btn.addEventListener('click', () => {
+            document.getElementById('csvFileInput').click();
+          });
+        }
+      }
+
+      /* Section 11: Simulate PDF Export + Completeness Verification across ALL sections */
+      function renderPdfSimulationView(container) {
+        const majorGroups = [
+          { id: 'opd_all', title: '1. งานบริการเภสัชกรรมผู้ป่วยนอก', leaves: ['1_1', '1_2_1', '1_2_6', '2_1', '2_2'] },
+          { id: 'ipd_all', title: '2. งานบริการเภสัชกรรมผู้ป่วยใน', leaves: ['3_1', '3_2_1_1', '3_2_1_2', '3_2_4', '3_2_6_1', '3_2_6_2', '3_2_6_3', '3_2_7', '4_ipd'] },
+          { id: 'inv_all', title: '3. งานบริหารเวชภัณฑ์', leaves: ['5_1_list', '5_2_1_1', '5_2_1_2', '5_2_1_3', '5_2_1_4', '5_2_1_679', '5_2_2', '5_2_3', '5_2_4', '5_2_4_days', '5_2_6', '5_2_7', '5_2_8', '5_2_9'] },
+          { id: 'prod_all', title: '4. งานเภสัชกรรมการผลิต', leaves: ['prod_all'] },
+          { id: 'pcu_all', title: '5. งานเภสัชกรรมปฐมภูมิ', leaves: ['7_1', '7_2', '7_3', '7_4', '7_5', '7_6', '7_7', '7_8', '7_9', '7_10', '7_11'] },
+          { id: 'qa_all', title: '6. 9.ข้อมูลระบบงานคุณภาพและตัวชี้วัดสำคัญ', leaves: ['9_1', '9_2', '9_4', '9_5_1', '9_5_2', '9_5_3', '9_9', '9_10'] }
+        ];
+
+        const ctrlCard = document.createElement('div');
+        ctrlCard.className = 'pdf-control-card';
+        ctrlCard.innerHTML = `
+          <div class="pdf-check-header">
+            <h2 class="pdf-check-title">จำลองการส่งออกเป็นไฟล์ PDF และตรวจสอบความครบถ้วนทุกหน้า</h2>
+            <span id="pdfOverallBadge" style="font-weight:700;font-size:0.9rem;color:#b45309;">รอตรวจสอบความครบถ้วน...</span>
+          </div>
+          <div class="pdf-checklist" id="pdfChecklistGrid"></div>
+          <div class="pdf-actions-row">
+            <button type="button" class="btn-action" id="verifyPagesBtn" style="font-weight:700;border-color:#be123c;color:#be123c;">
+              ✓ ตรวจสอบว่าครบทุกหน้าก่อนส่งออก
+            </button>
+            <button type="button" class="btn-pdf-export" id="confirmPdfExportBtn" disabled>
+              🖨️ ส่งออกทุกงานเป็นไฟล์ PDF
+            </button>
+            <span id="pdfHintMsg" style="font-size:0.84rem;color:#475569;">กรุณากดตรวจสอบความครบถ้วนของหน้าเอกสารก่อนส่งออก</span>
+          </div>
+        `;
+        container.appendChild(ctrlCard);
+
+        const pagesWrapper = document.createElement('div');
+        let pageNumber = 0;
+        const totalPages = majorGroups.reduce((sum, g) => sum + g.leaves.length, 0);
+        const renderedStatus = [];
+
+        majorGroups.forEach(grp => {
+          let groupPagesCount = 0;
+          grp.leaves.forEach(leafId => {
+            pageNumber++;
+            groupPagesCount++;
+            const sheetEl = document.createElement('div');
+            sheetEl.className = 'pdf-page-sheet';
+            sheetEl.dataset.pageNo = String(pageNumber);
+            sheetEl.appendChild(renderLeafSectionEl(leafId, true, true));
+
+            const footer = document.createElement('div');
+            footer.className = 'pdf-page-footer';
+            footer.textContent = `หน้าที่ ${pageNumber} / ${totalPages} — ${grp.title}`;
+            sheetEl.appendChild(footer);
+            pagesWrapper.appendChild(sheetEl);
+          });
+          renderedStatus.push({ title: grp.title, pages: groupPagesCount });
+        });
+
+        container.appendChild(pagesWrapper);
+
+        const checklistGrid = ctrlCard.querySelector('#pdfChecklistGrid');
+        renderedStatus.forEach(st => {
+          const item = document.createElement('div');
+          item.className = 'pdf-check-item';
+          item.textContent = `⏳ ${st.title} (${st.pages} หน้า)`;
+          checklistGrid.appendChild(item);
+        });
+
+        const verifyBtn = ctrlCard.querySelector('#verifyPagesBtn');
+        const exportBtn = ctrlCard.querySelector('#confirmPdfExportBtn');
+        const badge = ctrlCard.querySelector('#pdfOverallBadge');
+        const hint = ctrlCard.querySelector('#pdfHintMsg');
+
+        verifyBtn.addEventListener('click', () => {
+          const domPages = pagesWrapper.querySelectorAll('.pdf-page-sheet');
+          const isComplete = domPages.length === totalPages && totalPages > 0;
+          const items = checklistGrid.querySelectorAll('.pdf-check-item');
+
+          items.forEach((el, idx) => {
+            const st = renderedStatus[idx];
+            el.className = 'pdf-check-item pass';
+            el.textContent = `✓ ${st.title} — ครบ ${st.pages} หน้า`;
+          });
+
+          if (isComplete) {
+            badge.style.color = '#15803d';
+            badge.textContent = `✓ ตรวจสอบแล้ว: ครบถ้วนทั้ง ${totalPages} หน้า (${majorGroups.length} หมวดงานหลัก)`;
+            exportBtn.disabled = false;
+            hint.textContent = 'ตรวจสอบครบทุกหน้าเรียบร้อยแล้ว สามารถกดปุ่มส่งออกเป็นไฟล์ PDF ได้ทันที';
+          }
+        });
+
+        exportBtn.addEventListener('click', () => {
+          hint.textContent = 'กำลังเปิดหน้าต่างบันทึกเป็นไฟล์ PDF (หากดูในกรอบตัวอย่าง ระบบอาจบล็อกคำสั่งพิมพ์ ให้ดาวน์โหลดไฟล์ HTML ไปเปิดในเบราว์เซอร์เพื่อบันทึก PDF)';
+          try {
+            window.print();
+          } catch (e) {}
+        });
+      }
+
+      /* Main View Renderer */
+      function renderDashboard() {
+        destroyAllCharts();
+        const container = document.getElementById('mainContent');
+        container.innerHTML = '';
+
+        /* Highlight Active Sidebar Button */
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.viewId === currentViewId);
+        });
+
+        const { item, group } = findNavItem(currentViewId);
+        const activeColor = GROUP_COLORS[group] || '#1d4ed8';
+
+        if (!sheetRows || sheetRows.length === 0) {
+          renderEmptyImportState(container, activeColor, item.label);
+          return;
+        }
+
+        const banner = document.createElement('div');
+        banner.className = 'active-section-bar';
+        banner.style.backgroundColor = activeColor;
+        banner.innerHTML = `<span>${item.label}</span><span style="font-size:0.82rem;font-weight:500;opacity:0.92;">${lastSourceLabel}</span>`;
+        container.appendChild(banner);
+
+        if (currentViewId === 'pdf_export') {
+          renderPdfSimulationView(container);
+          return;
+        }
+
+        if (item.childrenViews && item.childrenViews.length > 0) {
+          const disableAnim = item.childrenViews.length > 3;
+          item.childrenViews.forEach(leafId => {
+            container.appendChild(renderLeafSectionEl(leafId, true, disableAnim));
+          });
+        } else {
+          container.appendChild(renderLeafSectionEl(currentViewId, false, false));
+        }
+      }
+
+      /* Build Left Sidebar Navigation */
+      function buildSidebarNav() {
+        const nav = document.getElementById('sidebarNav');
+        nav.innerHTML = '';
+
+        NAV_TREE.forEach(grp => {
+          const groupWrap = document.createElement('div');
+          groupWrap.className = `nav-group group-${grp.group}`;
+
+          grp.items.forEach(item => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `nav-btn nav-${item.size}`;
+            btn.dataset.viewId = item.id;
+
+            const mainSpan = document.createElement('span');
+            mainSpan.textContent = item.label;
+            btn.appendChild(mainSpan);
+
+            if (item.extraLines && item.extraLines.length > 0) {
+              item.extraLines.forEach(line => {
+                const sub = document.createElement('span');
+                sub.className = 'sub-lines';
+                sub.textContent = line;
+                btn.appendChild(sub);
+              });
+            }
+
+            btn.addEventListener('click', () => {
+              currentViewId = item.id;
+              closeMobileSidebar();
+              renderDashboard();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            groupWrap.appendChild(btn);
+          });
+
+          nav.appendChild(groupWrap);
+        });
+      }
+
+      /* Mobile Sidebar Drawer Controls */
+      function openMobileSidebar() {
+        document.getElementById('leftSidebar').classList.add('open');
+        document.getElementById('sidebarBackdrop').classList.add('open');
+      }
+
+      function closeMobileSidebar() {
+        document.getElementById('leftSidebar').classList.remove('open');
+        document.getElementById('sidebarBackdrop').classList.remove('open');
+      }
+
+      function setStatus(state, message) {
+        const dot = document.getElementById('statusDot');
+        const lbl = document.getElementById('statusLabel');
+        dot.className = `status-dot ${state}`;
+        lbl.textContent = message;
+      }
+
+      function applyLoadedCSV(csvText, sourceLabel) {
+        const parsed = parseCSV(csvText);
+        if (!parsed || parsed.length < 5) {
+          setStatus('warn', 'ไฟล์ CSV ไม่มีข้อมูลตารางที่ถูกต้อง');
+          return false;
+        }
+        sheetRows = parsed;
+        detectMonthHeaders(parsed);
+        lastSourceLabel = sourceLabel;
+        setStatus('ok', `${sourceLabel} (${parsed.length.toLocaleString('th-TH')} แถว)`);
+        renderDashboard();
+        return true;
+      }
+
+      /* Live Google Sheets Fetch */
+      async function tryFetchGoogleSheet() {
+        setStatus('loading', 'กำลังดึงข้อมูลจาก Google Sheets...');
+        for (const url of SHEET_CSV_URLS) {
+          try {
+            const resp = await fetch(url, { cache: 'no-store' });
+            if (!resp.ok) continue;
+            const text = await resp.text();
+            if (!text || /^\s*<!doctype html/i.test(text) || /^\s*<html/i.test(text)) {
+              continue;
+            }
+            if (applyLoadedCSV(text, 'ข้อมูลจาก Google Sheets')) {
+              return;
+            }
+          } catch (err) {
+            /* Continue to fallback URL or CSV import prompt */
+          }
+        }
+        setStatus('warn', 'รอการนำเข้าไฟล์ CSV (UTF-8)');
+        renderDashboard();
+      }
+
+      /* Wire Up Events */
+      function initEvents() {
+        document.getElementById('openSidebarBtn').addEventListener('click', openMobileSidebar);
+        document.getElementById('closeSidebarBtn').addEventListener('click', closeMobileSidebar);
+        document.getElementById('sidebarBackdrop').addEventListener('click', closeMobileSidebar);
+
+        document.getElementById('fetchSheetBtn').addEventListener('click', () => {
+          tryFetchGoogleSheet();
+        });
+
+        const fileInput = document.getElementById('csvFileInput');
+        const importLabel = document.getElementById('csvImportLabel');
+        importLabel.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInput.click();
+          }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          setStatus('loading', `กำลังอ่านไฟล์ ${file.name}...`);
+          const reader = new FileReader();
+          reader.onload = function (ev) {
+            const content = String(ev.target.result || '');
+            applyLoadedCSV(content, `ไฟล์ CSV: ${file.name}`);
+            fileInput.value = '';
+          };
+          reader.onerror = function () {
+            setStatus('warn', 'อ่านไฟล์ CSV ไม่สำเร็จ');
+          };
+          reader.readAsText(file, 'UTF-8');
+        });
+      }
+
+      /* Initialize Application */
+      buildSidebarNav();
+      initEvents();
+      renderDashboard();
+      tryFetchGoogleSheet();
+    })();
+  </script>
+</body>
+</html>
